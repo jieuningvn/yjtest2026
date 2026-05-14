@@ -1,5 +1,5 @@
 import React from 'react';
-import SheetMusic from '../components/SheetMusic';
+import MusicXMLViewer from '../components/MusicXMLViewer';
 import AudioPlayer from '../components/AudioPlayer';
 import Quiz from '../components/Quiz';
 
@@ -7,11 +7,11 @@ const Lesson1 = () => {
   return (
     <div className="lesson-page">
       <header className="lesson-header">
-        <h1>🎻 1차시: E현 통통통통</h1>
+        {/* Title is rendered by OSMD */}
       </header>
 
       <section className="section sheet-section">
-        <SheetMusic />
+        <MusicXMLViewer />
       </section>
 
       <section className="section player-section">
