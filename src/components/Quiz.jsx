@@ -16,7 +16,7 @@ const Quiz = () => {
   return (
     <div className="quiz-container">
       <h3>퀴즈</h3>
-      <p className="quiz-question">이 음의 계이름은?</p>
+      <p className="quiz-question">첫 음의 계이름은?</p>
       <div className="quiz-options">
         {['도', '레', '미'].map((note) => (
           <button

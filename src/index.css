@@ -21,11 +21,12 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  font-size: 16px;
 }
 
 .app-container {
   width: 100%;
-  max-width: 800px;
+  max-width: 480px;
   padding: 20px;
 }
 
@@ -88,19 +89,22 @@ body {
 }
 
 .quiz-question {
-  margin-bottom: 20px;
-  font-size: 1.1rem;
+  margin-bottom: 24px;
+  font-size: 1.25rem;
 }
 
 .quiz-options {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 15px;
   margin-bottom: 20px;
 }
 
 .quiz-button {
-  padding: 12px 25px;
+  width: 100%;
+  min-height: 48px;
+  padding: 14px 20px;
+  font-size: 16px;
   border: none;
   border-radius: 12px;
   background: white;
@@ -137,12 +141,29 @@ body {
   background: rgba(214, 48, 49, 0.1);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 480px) {
+  .app-container {
+    padding: 10px;
+  }
+  
   .lesson-page {
-    padding: 20px;
+    padding: 15px;
+    gap: 20px;
   }
   
   .lesson-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+  }
+
+  .section h3 {
+    font-size: 1.1rem;
+  }
+
+  .quiz-options {
+    grid-template-columns: 1fr;
+  }
+
+  .quiz-question {
+    font-size: 1.1rem;
   }
 }
