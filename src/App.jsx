@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Lesson1 from './pages/Lesson1';
+import NewWorldSymphony from './pages/NewWorldSymphony';
+import FourSeasonsSpring from './pages/FourSeasonsSpring';
+import SuccessPage from './pages/SuccessPage';
 import './App.css';
 
 function App() {
@@ -8,7 +10,9 @@ function App() {
     <Router>
       <div className="app-container">
         <Routes>
-          <Route path="/" element={<Lesson1 />} />
+          <Route path="/" element={<NewWorldSymphony />} />
+          <Route path="/spring" element={<FourSeasonsSpring />} />
+          <Route path="/success" element={<SuccessPage />} />
         </Routes>
       </div>
     </Router>
