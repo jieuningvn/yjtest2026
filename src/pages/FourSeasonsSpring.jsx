@@ -4,6 +4,7 @@ import ScoreViewer from '../components/ScoreViewer';
 import MRAudioPlayer from '../components/MRAudioPlayer';
 import MissionSection from '../components/MissionSection';
 import QuizSection from '../components/QuizSection';
+import springAudio from '../assets/springmp3.mp3';
 
 const FourSeasonsSpring = () => {
   const navigate = useNavigate();
@@ -22,14 +23,14 @@ const FourSeasonsSpring = () => {
   };
 
   const handlePrevStage = () => {
-    navigate('/');
+    navigate('/newworld');
   };
 
   return (
     <div className="lesson-page">
       <header className="lesson-header">
         <div className="page-meta">
-          <span className="stage-badge">2단계</span>
+          <span className="stage-badge">3단계</span>
           <span className="stage-info">음악 학습 앱 베타</span>
         </div>
         <h1>사계 - 봄</h1>
@@ -54,16 +55,16 @@ const FourSeasonsSpring = () => {
       {/* Score Viewer Section */}
       <section className="section sheet-section">
         <div className="section-header-row">
-          <h3>악보</h3>
-          <span className="status-indicator done">플레이스홀더</span>
+          <h3>악보 보기</h3>
+          <span className="status-indicator done">MusicXML</span>
         </div>
-        <ScoreViewer />
+        <ScoreViewer musicXmlUrl="/spring.mxl" />
       </section>
 
       {/* MR Audio Player Section */}
       <section className={`section player-section ${audioPlayed ? 'completed' : ''}`}>
         <MRAudioPlayer
-          audioUrl="/music.mp3"
+          audioUrl={springAudio}
           trackName="비발디 사계: 봄 - 알레그로 (MR)"
           onPlayed={() => setAudioPlayed(true)}
         />
@@ -104,7 +105,7 @@ const FourSeasonsSpring = () => {
           className="mission-btn"
           style={{ background: 'transparent', color: '#636e72', border: '1px solid #dcdde1', marginTop: '5px' }}
         >
-          ⬅ 1단계로 돌아가기 (신세계 교향곡)
+          ⬅ 2단계로 돌아가기 (신세계 교향곡)
         </button>
       </div>
     </div>

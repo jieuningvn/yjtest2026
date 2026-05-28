@@ -15,9 +15,11 @@ const SuccessPage = () => {
       <p className="success-desc">
         베타 음악 학습의 모든 단계를 성공적으로 완료하셨습니다:
         <br />
-        <strong>1. 신세계 교향곡</strong>
+        <strong>1. 통통통통</strong>
         <br />
-        <strong>2. 사계 - 봄</strong>
+        <strong>2. 신세계 교향곡</strong>
+        <br />
+        <strong>3. 사계 - 봄</strong>
       </p>
       
       <div style={{ background: 'rgba(255,255,255,0.6)', padding: '20px', borderRadius: '16px', marginBottom: '30px', border: '1px solid rgba(0,0,0,0.05)' }}>

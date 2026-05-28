@@ -1,0 +1,126 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import ScoreViewer from '../components/ScoreViewer';
+import MRAudioPlayer from '../components/MRAudioPlayer';
+import QuizSection from '../components/QuizSection';
+import ssgAudio from '../assets/ssgmp3.mp3';
+
+const NewWorldSymphony = () => {
+  const navigate = useNavigate();
+  
+  // State management
+  const [audioPlayed, setAudioPlayed] = useState(false);
+  const [quizCompleted, setQuizCompleted] = useState(false);
+
+  const allStagesCompleted = audioPlayed && quizCompleted;
+
+  const handleNextStage = () => {
+    if (allStagesCompleted) {
+      navigate('/spring');
+    }
+  };
+
+  return (
+    <div className="lesson-page">
+      <header className="lesson-header">
+        <div className="page-meta">
+          <span className="stage-badge">2�④�</span>
+          <span className="stage-info">�� ��� �� 踰��</span>
+        </div>
+        <h1>���멸� 援�κ끝</h1>
+        <p style={{ textAlign: 'center', color: '#636e72', marginTop: '-5px', fontSize: '0.95rem' }}>
+          �怨↔�: ���� �蹂대Ⅴ���
+        </p>
+      </header>
+
+      {/* Progress Flow Status Bar */}
+      <div className="progress-steps-container">
+        <div className={`progress-step ${audioPlayed ? 'completed' : ''}`}>
+          {audioPlayed ? '�' : '1截���'} �ㅻ�� �ъ
+        </div>
+        <div className={`progress-step ${quizCompleted ? 'completed' : ''}`}>
+          {quizCompleted ? '�' : '2截���'} �댁� ���
+        </div>
+      </div>
+
+      {/* 1. 怨� �媛 Section */}
+      <section className="section intro-section">
+        <div className="section-header-row">
+          <h3>怨� �媛</h3>
+        </div>
+        <div className="mission-text-box" style={{ background: 'rgba(255, 255, 255, 0.7)', borderLeft: '4px solid var(--primary-color)', padding: '15px', borderRadius: '4px 12px 12px 4px', fontSize: '0.95rem', lineHeight: '1.6' }}>
+          <strong>���멸�濡遺�� (From the New World)</strong>
+          <p style={{ marginTop: '8px' }}>
+            ���� �蹂대Ⅴ��ш� 1893� 誘멸뎅 �댁 援�┰ ����μ쇰� �ъ��� �� �怨≫ 洹몄 ����� 援�κ끝 �9踰����. 
+            誘멸뎅� 愿�� ��곌낵 ��� �媛, �몃�� 誘쇱 �� �濡�� �멸�� �몄�� 源� �媛� 諛� ��깅��듬��. 
+            怨��μ �� 洹몃━�仙錫�린 ���멸�� �� 寃쎌대���� 媛� 李� �����대㈃��� �由�ㅼ� ���⑥ �猿대낫�몄.
+          </p>
+        </div>
+      </section>
+
+      {/* 2. �蹂� 蹂닿린 Section */}
+      <section className="section sheet-section">
+        <div className="section-header-row">
+          <h3>�蹂� 蹂닿린</h3>
+          <span className="status-indicator done">MusicXML</span>
+        </div>
+        <ScoreViewer musicXmlUrl="/ssgscore.musicxml" />
+      </section>
+
+      {/* 3. MR �ъ Section */}
+      <section className={`section player-section ${audioPlayed ? 'completed' : ''}`}>
+        <MRAudioPlayer
+          audioUrl={ssgAudio}
+          trackName="���멸� 援�κ끝 - 硫�� �留 (MR)"
+          onPlayed={() => setAudioPlayed(true)}
+        />
+      </section>
+
+      {/* 4. �댁� Section */}
+      <QuizSection
+        question="'���멸� 援�κ끝'� �怨≫ �щ� �援ъ쇨��?"
+        options={['猷⑦몃�� � 踰���踰�', '���� �蹂대Ⅴ���', '蹂쇳媛 �留�곗곗� 紐⑥감瑜댄�', '������ 鍮諛�']}
+        correctAnswer="���� �蹂대Ⅴ���"
+        isCompleted={quizCompleted}
+        onComplete={() => setQuizCompleted(true)}
+      />
+
+      {/* 5. �ㅼ �④� 踰�� Footer */}
+      <div className="stage-navigation-footer">
+        <button
+          onClick={handleNextStage}
+          disabled={!allStagesCompleted}
+          className="next-stage-btn"
+        >
+          �ㅼ �④�濡 �대� (鍮諛� - 遊) �
+        </button>
+        {!allStagesCompleted && (
+          <p className="next-stage-hint">
+            * �ㅼ �④�濡 ��닿��ㅻ㈃ 紐⑤� �④�(�ㅻ�� �ъ, �댁� ���)瑜� �猷�� 二쇱몄.
+          </p>
+        )}
+      </div>��� �蹂대Ⅴ���"
+        isCompleted={quizCompleted}
+        onComplete={() => setQuizCompleted(true)}
+      />
+
+      {/* 6. �ㅼ �④� 踰�� Footer */}
+      <div className="stage-navigation-footer">
+        <button
+          onClick={handleNextStage}
+          disabled={!allStagesCompleted}
+          className="next-stage-btn"
+        >
+          �ㅼ �④�濡 �대� (鍮諛� - 遊) �
+        </button>
+        {!allStagesCompleted && (
+          <p className="next-stage-hint">
+            * �ㅼ �④�濡 ��닿��ㅻ㈃ 紐⑤� �④�(�ㅻ�� �ъ, 誘몄 �猷, �댁� ���)瑜� �猷�� 二쇱몄.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default NewWorldSymphony;
