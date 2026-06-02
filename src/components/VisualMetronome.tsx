@@ -16,54 +16,67 @@ export const VisualMetronome: React.FC<VisualMetronomeProps> = ({
   const [currentBeat, setCurrentBeat] = useState<number>(1);
   const [isFlashActive, setIsFlashActive] = useState<boolean>(false);
   
-  const animationFrameRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number>(0);
-  const lastBeatIndexRef = useRef<number>(-1);
+  const intervalRef = useRef<any>(null);
+  const onBeatRef = useRef(onBeat);
+
+  // Sync the latest onBeat callback
+  useEffect(() => {
+    onBeatRef.current = onBeat;
+  }, [onBeat]);
+
+  const beatIntervalMs = 60000 / bpm;
 
   useEffect(() => {
+    // Clean up any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
     if (!isPlaying) {
       setCurrentBeat(1);
       setIsFlashActive(false);
-      lastBeatIndexRef.current = -1;
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
       return;
     }
 
-    startTimeRef.current = performance.now();
-    lastBeatIndexRef.current = -1;
+    const startTime = performance.now();
+    let nextBeatIndex = 0;
 
-    const beatDurationMs = (60 / bpm) * 1000;
+    const checkBeat = () => {
+      const elapsed = performance.now() - startTime;
+      const targetTime = nextBeatIndex * beatIntervalMs;
 
-    const tick = () => {
-      const elapsed = performance.now() - startTimeRef.current;
-      const beatIndex = Math.floor(elapsed / beatDurationMs);
-
-      if (beatIndex !== lastBeatIndexRef.current) {
-        lastBeatIndexRef.current = beatIndex;
-        const beatNumber = (beatIndex % beats) + 1;
-        
+      if (elapsed >= targetTime) {
+        const beatNumber = (nextBeatIndex % beats) + 1;
         setCurrentBeat(beatNumber);
         setIsFlashActive(true);
-        
-        if (onBeat) {
-          onBeat(beatNumber);
-        }
-      }
 
-      animationFrameRef.current = requestAnimationFrame(tick);
+        if (onBeatRef.current) {
+          onBeatRef.current(beatNumber);
+        }
+
+        // Output debug logs as requested
+        console.log(
+          `[Metronome Debug] bpm: ${bpm}, interval: ${beatIntervalMs.toFixed(1)}ms, beat: ${beatNumber}/${beats}, isRunning: ${isPlaying}`
+        );
+
+        nextBeatIndex++;
+      }
     };
 
-    animationFrameRef.current = requestAnimationFrame(tick);
+    // Trigger the first beat immediately
+    checkBeat();
+
+    // High frequency interval (10ms) to check elapsed time and trigger beats precisely
+    const intervalId = setInterval(checkBeat, 10);
+    intervalRef.current = intervalId;
 
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (intervalId) {
+        clearInterval(intervalId);
       }
     };
-  }, [isPlaying, bpm, beats, onBeat]);
+  }, [isPlaying, bpm, beats, beatIntervalMs]);
 
   // Handle flash decay
   useEffect(() => {
@@ -87,7 +100,7 @@ export const VisualMetronome: React.FC<VisualMetronomeProps> = ({
       alignItems: 'center',
       gap: '15px',
       width: '100%',
-      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
       border: '1px solid rgba(255, 255, 255, 0.05)',
       marginTop: '10px',
     }}>
@@ -100,15 +113,15 @@ export const VisualMetronome: React.FC<VisualMetronomeProps> = ({
         paddingBottom: '8px',
         marginBottom: '5px',
       }}>
-        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#9ef', letterSpacing: '1px' }}>
+        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ff7675', letterSpacing: '1px' }}>
           👁️ VISUAL METRONOME
         </span>
         <span style={{
           fontSize: '0.75rem',
           padding: '2px 8px',
           borderRadius: '20px',
-          background: isPlaying ? 'rgba(0, 206, 201, 0.15)' : 'rgba(255,255,255,0.05)',
-          color: isPlaying ? '#00cec9' : '#95a5a6',
+          background: isPlaying ? 'rgba(255, 56, 56, 0.15)' : 'rgba(255,255,255,0.05)',
+          color: isPlaying ? '#ff7675' : '#95a5a6',
           fontWeight: 700,
         }}>
           {isPlaying ? '작동 중 (무음)' : '대기 중'}
@@ -117,7 +130,7 @@ export const VisualMetronome: React.FC<VisualMetronomeProps> = ({
 
       {/* Main Flash Area */}
       <div style={{
-        height: '90px',
+        height: '100px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -126,26 +139,29 @@ export const VisualMetronome: React.FC<VisualMetronomeProps> = ({
       }}>
         {/* Glowing bulb */}
         <div style={{
-          width: isStrongBeat ? '70px' : '50px',
-          height: isStrongBeat ? '70px' : '50px',
+          width: isStrongBeat ? '80px' : '60px',
+          height: isStrongBeat ? '80px' : '60px',
           borderRadius: '50%',
           background: isPlaying && isFlashActive
-            ? (isStrongBeat ? '#00cec9' : '#6366f1')
-            : '#2f3542',
+            ? '#ff3838'
+            : '#400a0a',
           boxShadow: isPlaying && isFlashActive
             ? (isStrongBeat 
-                ? '0 0 35px #00cec9, 0 0 15px rgba(0, 206, 201, 0.6)' 
-                : '0 0 25px #6366f1, 0 0 10px rgba(99, 102, 241, 0.6)')
-            : 'none',
-          transform: isPlaying && isFlashActive ? 'scale(1.1)' : 'scale(1)',
+                ? '0 0 45px #ff3838, 0 0 20px rgba(255, 56, 56, 0.8)' 
+                : '0 0 30px #ff3838, 0 0 12px rgba(255, 56, 56, 0.6)')
+            : '0 0 10px rgba(0, 0, 0, 0.5) inset',
+          border: isPlaying && isFlashActive
+            ? '2.5px solid #ff6b81'
+            : '2.5px solid #2c0000',
+          transform: isPlaying && isFlashActive ? 'scale(1.15)' : 'scale(1)',
           transition: isPlaying && isFlashActive ? 'transform 0.05s ease-out' : 'all 0.15s ease-out',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: isPlaying && isFlashActive ? '#fff' : 'rgba(255,255,255,0.15)',
+          color: isPlaying && isFlashActive ? '#fff' : 'rgba(255,255,255,0.2)',
           fontWeight: 800,
-          fontSize: isStrongBeat ? '1.8rem' : '1.3rem',
-          textShadow: isPlaying && isFlashActive ? '0 2px 4px rgba(0,0,0,0.3)' : 'none',
+          fontSize: isStrongBeat ? '2rem' : '1.5rem',
+          textShadow: isPlaying && isFlashActive ? '0 2px 6px rgba(0,0,0,0.5)' : 'none',
         }}>
           {isPlaying ? currentBeat : '-'}
         </div>
@@ -172,11 +188,11 @@ export const VisualMetronome: React.FC<VisualMetronomeProps> = ({
                 height: isFirst ? '14px' : '10px',
                 borderRadius: '50%',
                 background: isActive 
-                  ? (isFirst ? '#00cec9' : '#6366f1') 
+                  ? (isFirst ? '#ff3838' : '#ff7675') 
                   : 'rgba(255, 255, 255, 0.15)',
-                border: isFirst ? '1.5px solid rgba(0, 206, 201, 0.4)' : 'none',
+                border: isFirst ? '1.5px solid rgba(255, 56, 56, 0.4)' : 'none',
                 boxShadow: isActive 
-                  ? (isFirst ? '0 0 8px #00cec9' : '0 0 6px #6366f1') 
+                  ? (isFirst ? '0 0 10px #ff3838' : '0 0 6px #ff7675') 
                   : 'none',
                 transform: isActive ? 'scale(1.25)' : 'scale(1)',
                 transition: 'all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
@@ -188,18 +204,41 @@ export const VisualMetronome: React.FC<VisualMetronomeProps> = ({
 
       {/* BPM display */}
       <div style={{
-        fontSize: '0.8rem',
-        color: '#7f8c8d',
+        fontSize: '0.9rem',
+        color: '#a4b0be',
         fontWeight: 600,
         display: 'flex',
         alignItems: 'center',
-        gap: '4px',
+        gap: '8px',
+        marginTop: '5px',
       }}>
-        <span>박자:</span>
-        <strong style={{ color: '#fff' }}>{beats}박자</strong>
-        <span style={{ margin: '0 4px', color: '#555' }}>|</span>
-        <span>속도:</span>
-        <strong style={{ color: '#fff' }}>{bpm} BPM</strong>
+        <span>BPM: <strong style={{ color: '#ff7675' }}>{bpm}</strong></span>
+        <span style={{ color: 'rgba(255,255,255,0.15)' }}>|</span>
+        <span>Beat: <strong style={{ color: '#ff7675' }}>{isPlaying ? currentBeat : 1} / {beats}</strong></span>
+      </div>
+
+      {/* Debug Info Panel */}
+      <div style={{
+        marginTop: '5px',
+        padding: '8px 12px',
+        background: 'rgba(0,0,0,0.3)',
+        borderRadius: '8px',
+        fontSize: '0.75rem',
+        fontFamily: 'monospace',
+        color: '#a4b0be',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
+        border: '1px dashed rgba(255,255,255,0.1)'
+      }}>
+        <div style={{ color: '#ff7675', fontWeight: 'bold' }}>⚙️ DEBUG METADATA</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+          <span>currentBpm: {bpm}</span>
+          <span>beatIntervalMs: {beatIntervalMs.toFixed(1)}ms</span>
+          <span>currentBeat: {isPlaying ? currentBeat : '-'}</span>
+          <span>isMetronomeRunning: {isPlaying ? 'true' : 'false'}</span>
+        </div>
       </div>
     </div>
   );

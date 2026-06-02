@@ -53,9 +53,7 @@ const TongTongTongTong = () => {
         <div className="mission-text-box" style={{ background: 'rgba(255, 255, 255, 0.7)', borderLeft: '4px solid var(--primary-color)', padding: '15px', borderRadius: '4px 12px 12px 4px', fontSize: '0.95rem', lineHeight: '1.6' }}>
           <strong>통통통통 (Tong Tong Tong Tong)</strong>
           <p style={{ marginTop: '8px' }}>
-            어린이들에게 매우 친숙하고 활기찬 한국의 대표적인 유희 동요입니다. 
-            단순하고 반복적인 리듬과 멜로디로 구성되어 있어 악기를 처음 배우는 입문자들이 박자감과 손가락 독립성을 연습하기에 아주 좋은 곡입니다.
-            신나게 피아노나 바이올린 건반을 두드리며 곡의 즐거운 분위기를 몸으로 느껴보세요!
+            이 곡은 악기를 처음 배우는 학생들이 연주하기 좋은 곡입니다. 쉽고 재미있게 첫 연주를 시작해 보세요!
           </p>
         </div>
       </section>
