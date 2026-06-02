@@ -7,7 +7,7 @@ import ssgAudio from '../assets/ssgmp3.mp3';
 
 const NewWorldSymphony = () => {
   const navigate = useNavigate();
-  
+
   // State management
   const [audioPlayed, setAudioPlayed] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
@@ -55,8 +55,8 @@ const NewWorldSymphony = () => {
         <div className="mission-text-box" style={{ background: 'rgba(255, 255, 255, 0.7)', borderLeft: '4px solid var(--primary-color)', padding: '15px', borderRadius: '4px 12px 12px 4px', fontSize: '0.95rem', lineHeight: '1.6' }}>
           <strong>신세계로부터 (From the New World)</strong>
           <p style={{ marginTop: '8px' }}>
-            안토닌 드보르자크가 1893년 미국 뉴욕 국립 음악원장으로 재직하던 시절 작곡한 그의 대표적인 교향곡 제9번입니다. 
-            미국의 광활한 자연과 흑인 영가, 인디언 민요 등 새로운 세계의 인상에서 깊은 영감을 받아 완성되었습니다. 
+            안토닌 드보르자크가 1893년 미국 뉴욕 국립 음악원장으로 재직하던 시절 작곡한 그의 대표적인 교향곡 제9번입니다.
+            미국의 광활한 자연과 흑인 영가, 인디언 민요 등 새로운 세계의 인상에서 깊은 영감을 받아 완성되었습니다.
             고향에 대한 그리움과 신세계에 대한 경이로움이 가득 찬 역동적이면서도 아름다운 선율을 느껴보세요.
           </p>
         </div>
