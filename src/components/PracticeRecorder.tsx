@@ -6,6 +6,8 @@ import { frequencyToMidi, midiToNoteInfo } from '../lib/noteUtils';
 import { calculateScoring } from '../lib/scoring';
 import type { UserPitchSample, ScoringResult } from '../lib/scoring';
 import { analyzePerformance } from '../lib/performanceAnalysis';
+import { BpmControl } from './BpmControl';
+import { VisualMetronome } from './VisualMetronome';
 
 interface PracticeRecorderProps {
   musicXmlUrl: string;
@@ -23,6 +25,14 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
   const [showWarning, setShowWarning] = useState(false);
   const [scoredResult, setScoredResult] = useState<ScoringResult | null>(null);
 
+  const [bpm, setBpm] = useState<number>(60);
+  const [beats, setBeats] = useState<number>(4);
+  const [beatType, setBeatType] = useState<number>(4);
+  const [isCountingIn, setIsCountingIn] = useState<boolean>(false);
+  const [countInBeat, setCountInBeat] = useState<number>(1);
+  const [recordedSeconds, setRecordedSeconds] = useState<number>(0);
+  const [sampleCount, setSampleCount] = useState<number>(0);
+
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -30,16 +40,28 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
   
   const userPitchTimeline = useRef<UserPitchSample[]>([]);
   const startTimeRef = useRef<number>(0);
+  const isCountingInRef = useRef<boolean>(false);
+  const countInBeatsRef = useRef<number>(0);
+  const lastProgressUpdateRef = useRef<number>(0);
 
-  const bpm = musicXmlUrl.includes('ssgscore') ? 80 : 100;
+  useEffect(() => {
+    isCountingInRef.current = isCountingIn;
+  }, [isCountingIn]);
 
   // Load MusicXML and create the answerTimeline
   useEffect(() => {
     async function loadTimeline() {
       try {
-        const timeline = await fetchAndParseMusicXml(musicXmlUrl);
+        const parsed = await fetchAndParseMusicXml(musicXmlUrl);
+        setBeats(parsed.beats);
+        setBeatType(parsed.beatType);
+        
+        // Match default BPM to musicXML file name logic, but allow manual modification
+        const defaultBpm = musicXmlUrl.includes('ssgscore') ? 80 : 100;
+        setBpm(defaultBpm);
+
         // Only keep the first 4 measures for MVP
-        const mvpTimeline = timeline.filter(note => note.measureNumber <= 4);
+        const mvpTimeline = parsed.notes.filter(note => note.measureNumber <= 4);
         setAnswerTimeline(mvpTimeline);
       } catch (err) {
         console.error("Error loading MusicXML for timeline:", err);
@@ -92,9 +114,15 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
       analyserRef.current = analyser;
       source.connect(analyser);
 
-      // Initialize recording variables
+      // Initialize recording variables and count-in
       userPitchTimeline.current = [];
       startTimeRef.current = performance.now();
+      countInBeatsRef.current = 0;
+      setIsCountingIn(true);
+      setCountInBeat(1);
+      setRecordedSeconds(0);
+      setSampleCount(0);
+      lastProgressUpdateRef.current = 0;
       setIsRecording(true);
       
       const bufferLength = analyser.fftSize;
@@ -105,7 +133,8 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
         analyserRef.current.getFloatTimeDomainData(dataArray);
         
         const [frequency, clarity] = detectPitch(dataArray, audioContextRef.current.sampleRate);
-        const timeInSeconds = (performance.now() - startTimeRef.current) / 1000;
+        const now = performance.now();
+        const timeInSeconds = (now - startTimeRef.current) / 1000;
         const timeInBeats = timeInSeconds * (bpm / 60);
 
         if (frequency > 0 && clarity > 0.5) {
@@ -118,21 +147,32 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
           setCurrentFreq(Math.round(frequency * 10) / 10);
           setCentsError(errorCents);
 
-          // Push sample to timeline
-          userPitchTimeline.current.push({
-            time: timeInSeconds,
-            timeInBeats,
-            frequency,
-            midiNumber: midi
-          });
+          if (!isCountingInRef.current) {
+            // Push sample to timeline
+            userPitchTimeline.current.push({
+              time: timeInSeconds,
+              timeInBeats,
+              frequency,
+              midiNumber: midi
+            });
+          }
         } else {
-          // Push silence sample
-          userPitchTimeline.current.push({
-            time: timeInSeconds,
-            timeInBeats,
-            frequency: 0,
-            midiNumber: 0
-          });
+          if (!isCountingInRef.current) {
+            // Push silence sample
+            userPitchTimeline.current.push({
+              time: timeInSeconds,
+              timeInBeats,
+              frequency: 0,
+              midiNumber: 0
+            });
+          }
+        }
+
+        // Throttle progress updates to 100ms
+        if (!isCountingInRef.current && now - lastProgressUpdateRef.current > 100) {
+          lastProgressUpdateRef.current = now;
+          setRecordedSeconds(timeInSeconds);
+          setSampleCount(userPitchTimeline.current.length);
         }
         
         animationFrameRef.current = requestAnimationFrame(updatePitch);
@@ -165,6 +205,7 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
     }
     
     setIsRecording(false);
+    setIsCountingIn(false);
     setCurrentPitch('---');
     setCurrentFreq(0);
     setCentsError(0);
@@ -181,6 +222,22 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
     setScoredResult(null);
     setShowWarning(false);
     onScored(null); // Reset colors in sheet music
+  };
+
+  const handleBeat = (beatNumber: number) => {
+    if (isCountingInRef.current) {
+      countInBeatsRef.current += 1;
+      setCountInBeat(beatNumber);
+      
+      if (countInBeatsRef.current > beats) {
+        // Count-in finished!
+        setIsCountingIn(false);
+        isCountingInRef.current = false;
+        // Reset recording start time so that actual user pitch timeline starts at 0s
+        startTimeRef.current = performance.now();
+        userPitchTimeline.current = [];
+      }
+    }
   };
 
   // Convert cents error (-50 to +50) to percentage for gauge display
@@ -387,7 +444,7 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
       <div className="section-header-row">
         <h3>연주 분석 및 채점 (Phase 3)</h3>
         <span className={`status-indicator ${isRecording ? 'done' : 'pending'}`}>
-          {isRecording ? '● 실시간 분석 중' : '■ 준비 완료'}
+          {isRecording ? (isCountingIn ? '● 카운트인 대기 중' : '● 실시간 분석 중') : '■ 준비 완료'}
         </span>
       </div>
 
@@ -395,13 +452,80 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
         <div className="recorder-warning">
           <span>🎧 <strong>안내:</strong> 정확한 채점을 위해 이어폰을 착용해 주세요.</span>
           <br />
-          <span>채점 모드에서는 예시 음원(MR)이 자동으로 정지됩니다.</span>
+          <span>채점 모드에서는 예시 음원(MR)이 자동으로 정지되고 메트로놈은 무음으로 작동합니다.</span>
         </div>
       )}
 
       {errorMessage && (
         <div className="recorder-warning" style={{ borderColor: 'var(--error-color)', color: 'var(--error-color)', background: 'rgba(214, 48, 49, 0.05)' }}>
           <span>⚠️ <strong>오류:</strong> {errorMessage}</span>
+        </div>
+      )}
+
+      {/* BPM 및 메트로놈 영역 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%', marginBottom: '5px' }}>
+        <BpmControl
+          value={bpm}
+          onChange={(newBpm) => setBpm(newBpm)}
+          disabled={isRecording}
+        />
+        
+        <VisualMetronome
+          bpm={bpm}
+          beats={beats}
+          isPlaying={isRecording}
+          onBeat={handleBeat}
+        />
+      </div>
+
+      {/* 카운트인 오버레이 안내 */}
+      {isRecording && isCountingIn && (
+        <div style={{
+          background: 'rgba(0, 206, 201, 0.08)',
+          border: '2px solid #00cec9',
+          borderRadius: '16px',
+          padding: '16px',
+          textAlign: 'center',
+          boxShadow: '0 4px 15px rgba(0, 206, 201, 0.15)',
+        }}>
+          <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0097a7', marginBottom: '6px' }}>
+            ⏳ 준비하세요! 1마디 카운트인 진행 중 ({beats}/{beatType} 박자)
+          </div>
+          <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#00cec9', lineHeight: 1 }}>
+            {countInBeat}
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#636e72', marginTop: '6px' }}>
+            {beats}박자 후 연주를 시작하세요!
+          </div>
+        </div>
+      )}
+
+      {/* 실시간 수집 통계 패널 */}
+      {isRecording && !isCountingIn && (
+        <div style={{
+          background: 'rgba(46, 204, 113, 0.06)',
+          border: '1.5px solid var(--success-color)',
+          borderRadius: '16px',
+          padding: '12px',
+          display: 'flex',
+          justifyContent: 'space-around',
+          alignItems: 'center',
+          boxShadow: '0 4px 12px rgba(46, 204, 113, 0.03)',
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '0.68rem', color: '#636e72', textTransform: 'uppercase', letterSpacing: '0.5px' }}>박자표</div>
+            <strong style={{ fontSize: '1.1rem', color: 'var(--primary-color)' }}>{beats}/{beatType}</strong>
+          </div>
+          <div style={{ width: '1px', height: '24px', background: 'rgba(0,0,0,0.06)' }} />
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '0.68rem', color: '#636e72', textTransform: 'uppercase', letterSpacing: '0.5px' }}>녹음 시간</div>
+            <strong style={{ fontSize: '1.1rem', color: 'var(--success-color)' }}>{recordedSeconds.toFixed(1)}초</strong>
+          </div>
+          <div style={{ width: '1px', height: '24px', background: 'rgba(0,0,0,0.06)' }} />
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '0.68rem', color: '#636e72', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수집된 음정 샘플</div>
+            <strong style={{ fontSize: '1.1rem', color: '#2980b9' }}>{sampleCount}개</strong>
+          </div>
         </div>
       )}
 

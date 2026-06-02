@@ -11,10 +11,16 @@ export interface TimelineNote {
   duration: number; // in beats
 }
 
+export interface ParsedMusicXml {
+  notes: TimelineNote[];
+  beats: number;
+  beatType: number;
+}
+
 /**
  * Fetches a MusicXML file from a URL and parses it into a timeline.
  */
-export async function fetchAndParseMusicXml(url: string): Promise<TimelineNote[]> {
+export async function fetchAndParseMusicXml(url: string): Promise<ParsedMusicXml> {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch MusicXML from ${url}: ${response.statusText}`);
@@ -26,7 +32,7 @@ export async function fetchAndParseMusicXml(url: string): Promise<TimelineNote[]
 /**
  * Parses MusicXML text content into a structured timeline array.
  */
-export function parseMusicXml(xmlText: string): TimelineNote[] {
+export function parseMusicXml(xmlText: string): ParsedMusicXml {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
   
@@ -34,7 +40,7 @@ export function parseMusicXml(xmlText: string): TimelineNote[] {
   const part = xmlDoc.querySelector('part');
   if (!part) {
     console.warn("No part found in MusicXML");
-    return [];
+    return { notes: [], beats: 4, beatType: 4 };
   }
   
   const timeline: TimelineNote[] = [];
@@ -42,6 +48,8 @@ export function parseMusicXml(xmlText: string): TimelineNote[] {
   
   let currentTime = 0; // in beats
   let divisions = 1; // default divisions (how many divisions in a quarter note)
+  let beats = 4;
+  let beatType = 4;
   
   measures.forEach((measure) => {
     const measureNumberStr = measure.getAttribute('number');
@@ -62,6 +70,17 @@ export function parseMusicXml(xmlText: string): TimelineNote[] {
         const divElem = element.querySelector('divisions');
         if (divElem && divElem.textContent) {
           divisions = parseFloat(divElem.textContent) || 1;
+        }
+        const timeElem = element.querySelector('time');
+        if (timeElem) {
+          const beatsElem = timeElem.querySelector('beats');
+          if (beatsElem && beatsElem.textContent) {
+            beats = parseInt(beatsElem.textContent, 10) || 4;
+          }
+          const beatTypeElem = timeElem.querySelector('beat-type');
+          if (beatTypeElem && beatTypeElem.textContent) {
+            beatType = parseInt(beatTypeElem.textContent, 10) || 4;
+          }
         }
       } else if (tagName === 'backup') {
         const durElem = element.querySelector('duration');
@@ -162,5 +181,9 @@ export function parseMusicXml(xmlText: string): TimelineNote[] {
     });
   });
   
-  return timeline;
+  return {
+    notes: timeline,
+    beats,
+    beatType
+  };
 }
