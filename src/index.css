@@ -529,3 +529,188 @@ body {
   50% { transform: translateY(-10px); }
 }
 
+/* --- Practice Recorder & Violin Scoring CSS --- */
+.recorder-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  padding: 24px;
+  border-radius: 16px;
+  margin-top: 10px;
+}
+
+.recorder-warning {
+  background: rgba(230, 126, 34, 0.08);
+  border-left: 4px solid #e67e22;
+  padding: 12px;
+  border-radius: 4px 8px 8px 4px;
+  font-size: 0.85rem;
+  color: #d35400;
+  line-height: 1.5;
+}
+
+.recorder-btn-group {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 5px;
+}
+
+.rec-btn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rec-btn-listen {
+  background: white;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+.rec-btn-listen:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.rec-btn-start {
+  background: var(--primary-color);
+  color: white;
+}
+
+.rec-btn-start:hover {
+  background: #4f46e5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.rec-btn-stop {
+  background: var(--error-color);
+  color: white;
+}
+
+.rec-btn-stop:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(214, 48, 49, 0.3);
+}
+
+.rec-btn:active {
+  transform: translateY(1px);
+}
+
+.pitch-display-card {
+  background: #2d3436;
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(45, 52, 54, 0.25);
+  margin-top: 10px;
+}
+
+.pitch-display-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  text-align: center;
+  z-index: 2;
+}
+
+.pitch-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pitch-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: #b2bec3;
+  letter-spacing: 1px;
+}
+
+.pitch-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #00cec9;
+}
+
+.pitch-value.cents {
+  font-size: 1.5rem;
+}
+
+.pitch-gauge-container {
+  width: 100%;
+  height: 8px;
+  background: #455a64;
+  border-radius: 4px;
+  margin-top: 15px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pitch-gauge-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: var(--success-color);
+  border-radius: 2px;
+  transition: left 0.1s ease;
+}
+
+.timeline-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.timeline-preview h4 {
+  font-size: 0.95rem;
+  color: #2d3436;
+  margin-bottom: 5px;
+}
+
+.timeline-notes-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+
+.timeline-note-badge {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  background: white;
+  border: 1px solid #dfe6e9;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.timeline-note-badge.current {
+  border-color: var(--primary-color);
+  background: rgba(99, 102, 241, 0.05);
+  font-weight: 600;
+}
+
+

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const MRAudioPlayer = ({ audioUrl, onPlayed, trackName }) => {
+const MRAudioPlayer = ({ audioUrl, onPlayed, trackName, playerRef }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasPlayed, setHasPlayed] = useState(false);
   const audioRef = useRef(null);
@@ -13,6 +13,38 @@ const MRAudioPlayer = ({ audioUrl, onPlayed, trackName }) => {
       }
     };
   }, [audioUrl]);
+
+  // Expose play/pause/mute functions to parent through playerRef
+  useEffect(() => {
+    if (playerRef) {
+      playerRef.current = {
+        pause: () => {
+          if (audioRef.current) {
+            audioRef.current.pause();
+            setIsPlaying(false);
+          }
+        },
+        mute: () => {
+          if (audioRef.current) {
+            audioRef.current.muted = true;
+          }
+        },
+        unmute: () => {
+          if (audioRef.current) {
+            audioRef.current.muted = false;
+          }
+        },
+        play: () => {
+          if (audioRef.current) {
+            audioRef.current.play()
+              .then(() => setIsPlaying(true))
+              .catch(err => console.error("External audio playback failed: ", err));
+          }
+        },
+        isPlaying: () => isPlaying
+      };
+    }
+  }, [playerRef, isPlaying]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;

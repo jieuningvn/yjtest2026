@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ScoreViewer from '../components/ScoreViewer';
 import MRAudioPlayer from '../components/MRAudioPlayer';
 import QuizSection from '../components/QuizSection';
+import PracticeRecorder from '../components/PracticeRecorder';
 import ssgAudio from '../assets/ssgmp3.mp3';
 
 const NewWorldSymphony = () => {
   const navigate = useNavigate();
+  const mrPlayerRef = useRef(null);
 
   // State management
   const [audioPlayed, setAudioPlayed] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
+  const [scoredNotes, setScoredNotes] = useState(null);
 
   const allStagesCompleted = audioPlayed && quizCompleted;
 
@@ -68,7 +71,7 @@ const NewWorldSymphony = () => {
           <h3>악보 보기</h3>
           <span className="status-indicator done">MusicXML</span>
         </div>
-        <ScoreViewer musicXmlUrl="/ssgscore.musicxml" />
+        <ScoreViewer musicXmlUrl="/ssgscore.musicxml" scoredNotes={scoredNotes} />
       </section>
 
       {/* 3. MR 재생 Section */}
@@ -77,8 +80,16 @@ const NewWorldSymphony = () => {
           audioUrl={ssgAudio}
           trackName="신세계 교향곡 - 메인 테마 (MR)"
           onPlayed={() => setAudioPlayed(true)}
+          playerRef={mrPlayerRef}
         />
       </section>
+
+      {/* 3.5. 연주 분석 및 채점 Section */}
+      <PracticeRecorder
+        musicXmlUrl="/ssgscore.musicxml"
+        mrPlayerRef={mrPlayerRef}
+        onScored={setScoredNotes}
+      />
 
       {/* 4. 퀴즈 Section */}
       <QuizSection

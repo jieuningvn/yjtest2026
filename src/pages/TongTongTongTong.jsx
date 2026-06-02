@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ScoreViewer from '../components/ScoreViewer';
 import MRAudioPlayer from '../components/MRAudioPlayer';
 import QuizSection from '../components/QuizSection';
+import PracticeRecorder from '../components/PracticeRecorder';
 
 const TongTongTongTong = () => {
   const navigate = useNavigate();
+  const mrPlayerRef = useRef(null);
   
   // State management
   const [audioPlayed, setAudioPlayed] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
+  const [scoredNotes, setScoredNotes] = useState(null);
 
   const allStagesCompleted = audioPlayed && quizCompleted;
 
@@ -63,7 +66,7 @@ const TongTongTongTong = () => {
           <h3>악보 보기</h3>
           <span className="status-indicator done">MusicXML</span>
         </div>
-        <ScoreViewer musicXmlUrl="/tongtong.musicxml" />
+        <ScoreViewer musicXmlUrl="/tongtong.musicxml" scoredNotes={scoredNotes} />
       </section>
 
       {/* 3. MR 재생 Section */}
@@ -72,8 +75,16 @@ const TongTongTongTong = () => {
           audioUrl="/music.mp3"
           trackName="통통통통 (MR)"
           onPlayed={() => setAudioPlayed(true)}
+          playerRef={mrPlayerRef}
         />
       </section>
+
+      {/* 3.5. 연주 분석 및 채점 Section */}
+      <PracticeRecorder
+        musicXmlUrl="/tongtong.musicxml"
+        mrPlayerRef={mrPlayerRef}
+        onScored={setScoredNotes}
+      />
 
       {/* 4. 퀴즈 Section */}
       <QuizSection

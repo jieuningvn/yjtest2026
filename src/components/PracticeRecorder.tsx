@@ -1,0 +1,493 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { fetchAndParseMusicXml } from '../lib/musicxmlToTimeline';
+import type { TimelineNote } from '../lib/musicxmlToTimeline';
+import { detectPitch } from '../lib/pitchDetection';
+import { frequencyToMidi, midiToNoteInfo } from '../lib/noteUtils';
+import { calculateScoring } from '../lib/scoring';
+import type { UserPitchSample, ScoringResult } from '../lib/scoring';
+import { analyzePerformance } from '../lib/performanceAnalysis';
+
+interface PracticeRecorderProps {
+  musicXmlUrl: string;
+  mrPlayerRef: React.RefObject<any>;
+  onScored: (notes: any[] | null) => void;
+}
+
+export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl, mrPlayerRef, onScored }) => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [answerTimeline, setAnswerTimeline] = useState<TimelineNote[]>([]);
+  const [currentPitch, setCurrentPitch] = useState<string>('---');
+  const [currentFreq, setCurrentFreq] = useState<number>(0);
+  const [centsError, setCentsError] = useState<number>(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showWarning, setShowWarning] = useState(false);
+  const [scoredResult, setScoredResult] = useState<ScoringResult | null>(null);
+
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  
+  const userPitchTimeline = useRef<UserPitchSample[]>([]);
+  const startTimeRef = useRef<number>(0);
+
+  const bpm = musicXmlUrl.includes('ssgscore') ? 80 : 100;
+
+  // Load MusicXML and create the answerTimeline
+  useEffect(() => {
+    async function loadTimeline() {
+      try {
+        const timeline = await fetchAndParseMusicXml(musicXmlUrl);
+        // Only keep the first 4 measures for MVP
+        const mvpTimeline = timeline.filter(note => note.measureNumber <= 4);
+        setAnswerTimeline(mvpTimeline);
+      } catch (err) {
+        console.error("Error loading MusicXML for timeline:", err);
+        setErrorMessage("악보에서 정답 타임라인을 파싱하지 못했습니다.");
+      }
+    }
+    if (musicXmlUrl) {
+      loadTimeline();
+    }
+  }, [musicXmlUrl]);
+
+  // Clean up recording on unmount
+  useEffect(() => {
+    return () => {
+      stopRecording();
+    };
+  }, []);
+
+  const handleListenExample = () => {
+    // Play MR
+    if (mrPlayerRef && mrPlayerRef.current) {
+      mrPlayerRef.current.unmute();
+      mrPlayerRef.current.play();
+    }
+  };
+
+  const startRecording = async () => {
+    setErrorMessage(null);
+    setShowWarning(true);
+    setScoredResult(null);
+    onScored(null); // Reset colors in sheet music
+    
+    // Stop and mute MP3 automatically
+    if (mrPlayerRef && mrPlayerRef.current) {
+      mrPlayerRef.current.pause();
+      mrPlayerRef.current.mute();
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const audioCtx = new AudioContextClass();
+      audioContextRef.current = audioCtx;
+      
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048; // enough for pitch detection
+      analyserRef.current = analyser;
+      source.connect(analyser);
+
+      // Initialize recording variables
+      userPitchTimeline.current = [];
+      startTimeRef.current = performance.now();
+      setIsRecording(true);
+      
+      const bufferLength = analyser.fftSize;
+      const dataArray = new Float32Array(bufferLength);
+      
+      const updatePitch = () => {
+        if (!analyserRef.current || !audioContextRef.current) return;
+        analyserRef.current.getFloatTimeDomainData(dataArray);
+        
+        const [frequency, clarity] = detectPitch(dataArray, audioContextRef.current.sampleRate);
+        const timeInSeconds = (performance.now() - startTimeRef.current) / 1000;
+        const timeInBeats = timeInSeconds * (bpm / 60);
+
+        if (frequency > 0 && clarity > 0.5) {
+          const midi = frequencyToMidi(frequency);
+          const { noteName, octave } = midiToNoteInfo(midi);
+          const roundedMidi = Math.round(midi);
+          const errorCents = Math.round((midi - roundedMidi) * 100);
+          
+          setCurrentPitch(`${noteName}${octave}`);
+          setCurrentFreq(Math.round(frequency * 10) / 10);
+          setCentsError(errorCents);
+
+          // Push sample to timeline
+          userPitchTimeline.current.push({
+            time: timeInSeconds,
+            timeInBeats,
+            frequency,
+            midiNumber: midi
+          });
+        } else {
+          // Push silence sample
+          userPitchTimeline.current.push({
+            time: timeInSeconds,
+            timeInBeats,
+            frequency: 0,
+            midiNumber: 0
+          });
+        }
+        
+        animationFrameRef.current = requestAnimationFrame(updatePitch);
+      };
+      
+      animationFrameRef.current = requestAnimationFrame(updatePitch);
+
+    } catch (err: any) {
+      console.error("Microphone access failed: ", err);
+      setErrorMessage("마이크 연결에 실패했습니다. 권한을 허용해 주세요.");
+      setIsRecording(false);
+      setShowWarning(false);
+    }
+  };
+
+  const stopRecording = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+    
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    
+    setIsRecording(false);
+    setCurrentPitch('---');
+    setCurrentFreq(0);
+    setCentsError(0);
+
+    // Calculate grading results
+    if (userPitchTimeline.current.length > 0 && answerTimeline.length > 0) {
+      const result = calculateScoring(answerTimeline, userPitchTimeline.current, bpm);
+      setScoredResult(result);
+      onScored(result.notes); // Pass scores to parent for note colorizing
+    }
+  };
+
+  const handleReset = () => {
+    setScoredResult(null);
+    setShowWarning(false);
+    onScored(null); // Reset colors in sheet music
+  };
+
+  // Convert cents error (-50 to +50) to percentage for gauge display
+  const getGaugeLeftPercentage = (cents: number) => {
+    const clamped = Math.max(-50, Math.min(50, cents));
+    return 50 + (clamped / 50) * 40; // -50cents -> 10%, +50cents -> 90%
+  };
+
+  // If we have scored results, render the results dashboard
+  if (scoredResult) {
+    return (
+      <div key="result" className="section recorder-container" style={{ background: 'rgba(99, 102, 241, 0.08)', border: '2px solid var(--primary-color)' }}>
+        <div className="section-header-row">
+          <h3>연주 채점 결과 (Phase 3)</h3>
+          <span className="status-indicator done">평가 완료</span>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', margin: '15px 0' }}>
+          {/* Total score ring */}
+          <div style={{
+            width: '120px',
+            height: '120px',
+            borderRadius: '50%',
+            background: 'var(--primary-color)',
+            color: 'white',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 8px 24px rgba(99, 102, 241, 0.4)',
+          }}>
+            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', opacity: 0.85 }}>총점</span>
+            <span style={{ fontSize: '2.5rem', fontWeight: 800 }}>{scoredResult.totalScore}</span>
+            <span style={{ fontSize: '0.8rem', opacity: 0.85 }}>점</span>
+          </div>
+
+          {/* Breakdown bars */}
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Pitch breakdown */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '4px' }}>
+                <span>음정 정확도 (70%)</span>
+                <strong>{scoredResult.pitchScore}점</strong>
+              </div>
+              <div style={{ height: '6px', background: '#dfe6e9', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{ width: `${scoredResult.pitchScore}%`, height: '100%', background: 'var(--success-color)' }} />
+              </div>
+            </div>
+            {/* Timing breakdown */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '4px' }}>
+                <span>박자 정확도 (20%)</span>
+                <strong>{scoredResult.timingScore}점</strong>
+              </div>
+              <div style={{ height: '6px', background: '#dfe6e9', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{ width: `${scoredResult.timingScore}%`, height: '100%', background: '#0984e3' }} />
+              </div>
+            </div>
+            {/* Duration breakdown */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '4px' }}>
+                <span>길이 정확도 (10%)</span>
+                <strong>{scoredResult.durationScore}점</strong>
+              </div>
+              <div style={{ height: '6px', background: '#dfe6e9', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{ width: `${scoredResult.durationScore}%`, height: '100%', background: '#fdcb6e' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Statistics section */}
+        {(() => {
+          const stats = analyzePerformance(scoredResult.notes);
+          return (
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.75)',
+              borderRadius: '12px',
+              padding: '15px',
+              border: '1px solid rgba(99, 102, 241, 0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              width: '100%',
+              fontSize: '0.85rem'
+            }}>
+              <h4 style={{ color: 'var(--primary-color)', margin: '0 0 5px 0', fontSize: '0.95rem' }}>📊 연주 종합 분석 보고서 (Phase 4)</h4>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ background: 'white', padding: '8px 12px', borderRadius: '8px', border: '1px solid #f1f2f6' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#636e72' }}>가장 많이 틀린 음</div>
+                  <strong style={{ fontSize: '0.95rem', color: stats.mostWrongNote !== '없음' ? 'var(--error-color)' : 'var(--success-color)' }}>
+                    {stats.mostWrongNote}
+                  </strong>
+                </div>
+                <div style={{ background: 'white', padding: '8px 12px', borderRadius: '8px', border: '1px solid #f1f2f6' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#636e72' }}>음정이 낮게 치우친 음</div>
+                  <strong style={{ fontSize: '0.95rem', color: stats.mostFlatNote !== '없음' ? '#0984e3' : '#636e72' }}>
+                    {stats.mostFlatNote}
+                  </strong>
+                </div>
+                <div style={{ background: 'white', padding: '8px 12px', borderRadius: '8px', border: '1px solid #f1f2f6' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#636e72' }}>음정이 높게 치우친 음</div>
+                  <strong style={{ fontSize: '0.95rem', color: stats.mostSharpNote !== '없음' ? '#e17055' : '#636e72' }}>
+                    {stats.mostSharpNote}
+                  </strong>
+                </div>
+                <div style={{ background: 'white', padding: '8px 12px', borderRadius: '8px', border: '1px solid #f1f2f6' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#636e72' }}>박자 불안정 구간 (마디)</div>
+                  <strong style={{ fontSize: '0.8rem', color: '#d63031' }}>
+                    {stats.lateMeasures.length > 0 || stats.earlyMeasures.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        {stats.lateMeasures.length > 0 && <span>늦음: {stats.lateMeasures.join(', ')}마디</span>}
+                        {stats.earlyMeasures.length > 0 && <span>빠름: {stats.earlyMeasures.join(', ')}마디</span>}
+                      </div>
+                    ) : (
+                      '안정적임'
+                    )}
+                  </strong>
+                </div>
+              </div>
+
+              {stats.wrongNotesList.length > 0 && (
+                <div style={{ marginTop: '5px' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#636e72', marginBottom: '4px' }}>⚠️ 틀린 음 상세 목록</div>
+                  <div style={{ maxHeight: '80px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {stats.wrongNotesList.map((item, idx) => (
+                      <div key={idx} style={{ padding: '4px 8px', background: 'rgba(214, 48, 49, 0.05)', borderLeft: '3px solid var(--error-color)', borderRadius: '0 4px 4px 0', fontSize: '0.75rem', color: '#c0392b' }}>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Note-by-note analysis */}
+        <div style={{ background: 'white', borderRadius: '12px', padding: '15px', border: '1px solid #dfe6e9', maxHeight: '200px', overflowY: 'auto' }}>
+          <h4 style={{ fontSize: '0.9rem', marginBottom: '10px', color: 'var(--text-color)' }}>세부 음표 분석</h4>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #dfe6e9', color: '#636e72' }}>
+                <th style={{ padding: '6px 0' }}>마디/순서</th>
+                <th>정답 음</th>
+                <th>연주 음</th>
+                <th>음정 오차</th>
+                <th>결과</th>
+                <th>교육용 피드백</th>
+              </tr>
+            </thead>
+            <tbody>
+              {scoredResult.notes.map((note, idx) => (
+                <tr key={idx} style={{ borderBottom: '1px solid #f1f2f6' }}>
+                  <td style={{ padding: '8px 0', color: '#636e72' }}>{note.measureNumber}마디-{note.noteIndex}번째</td>
+                  <td style={{ fontWeight: 600, color: 'var(--primary-color)' }}>{note.expectedNote}</td>
+                  <td style={{ fontWeight: 600, color: note.detectedNote === 'Wrong' ? 'var(--error-color)' : '#2d3436' }}>
+                    {note.detectedNote}
+                  </td>
+                  <td style={{
+                    color: note.centsError === 0 && note.detectedNote === 'Wrong' ? 'var(--error-color)' :
+                           Math.abs(note.centsError) <= 30 ? 'var(--success-color)' :
+                           Math.abs(note.centsError) <= 50 ? '#0984e3' : 'var(--error-color)'
+                  }}>
+                    {note.detectedNote === 'Wrong' ? 'N/A' : (note.centsError >= 0 ? `+${note.centsError}c` : `${note.centsError}c`)}
+                  </td>
+                  <td>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '0.7rem',
+                      fontWeight: 'bold',
+                      color: 'white',
+                      background: note.resultStatus === 'Excellent' ? 'var(--success-color)' :
+                                  note.resultStatus === 'Good' ? '#0984e3' :
+                                  note.resultStatus === 'Almost' ? '#fdcb6e' : 'var(--error-color)'
+                    }}>
+                      {note.resultStatus}
+                    </span>
+                  </td>
+                  <td style={{ color: '#555', fontStyle: 'italic' }}>
+                    {note.feedbackMessage}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Action Button */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
+          <button className="rec-btn rec-btn-start" onClick={handleReset}>
+            <span>🔄 다시 채점하기</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div key="recorder" className="section recorder-container">
+      <div className="section-header-row">
+        <h3>연주 분석 및 채점 (Phase 3)</h3>
+        <span className={`status-indicator ${isRecording ? 'done' : 'pending'}`}>
+          {isRecording ? '● 실시간 분석 중' : '■ 준비 완료'}
+        </span>
+      </div>
+
+      {showWarning && (
+        <div className="recorder-warning">
+          <span>🎧 <strong>안내:</strong> 정확한 채점을 위해 이어폰을 착용해 주세요.</span>
+          <br />
+          <span>채점 모드에서는 예시 음원(MR)이 자동으로 정지됩니다.</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="recorder-warning" style={{ borderColor: 'var(--error-color)', color: 'var(--error-color)', background: 'rgba(214, 48, 49, 0.05)' }}>
+          <span>⚠️ <strong>오류:</strong> {errorMessage}</span>
+        </div>
+      )}
+
+      {/* Answer Timeline Preview */}
+      <div className="timeline-preview">
+        <h4>정답 악보 타임라인 (첫 4마디 MVP)</h4>
+        {answerTimeline.length === 0 ? (
+          <p style={{ fontSize: '0.85rem', color: '#7f8c8d' }}>악보 분석 중...</p>
+        ) : (
+          <div className="timeline-notes-list">
+            {answerTimeline.map((note, idx) => (
+              <div key={idx} className="timeline-note-badge">
+                <div style={{ fontWeight: 600, color: 'var(--primary-color)' }}>{note.noteName}{note.octave}</div>
+                <div style={{ fontSize: '0.7rem', color: '#7f8c8d' }}>
+                  {note.measureNumber}마디 ({note.duration}박)
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Real-time Pitch Detection Display */}
+      <div className="pitch-display-card">
+        <div className="pitch-display-grid">
+          <div className="pitch-metric">
+            <span className="pitch-label">감지된 음정</span>
+            <span className="pitch-value" style={{ color: currentPitch === '---' ? '#b2bec3' : '#00cec9' }}>
+              {currentPitch}
+            </span>
+          </div>
+          <div className="pitch-metric">
+            <span className="pitch-label">실시간 주파수</span>
+            <span className="pitch-value">
+              {currentFreq > 0 ? `${currentFreq} Hz` : '---'}
+            </span>
+          </div>
+          <div className="pitch-metric">
+            <span className="pitch-label">음정 편차 (Cents)</span>
+            <span className="pitch-value cents" style={{ 
+              color: currentFreq === 0 ? '#b2bec3' : 
+                     Math.abs(centsError) <= 30 ? 'var(--success-color)' : 
+                     Math.abs(centsError) <= 50 ? '#81ecec' : 
+                     Math.abs(centsError) <= 80 ? '#ffeaa7' : 'var(--error-color)'
+            }}>
+              {currentFreq > 0 ? (centsError >= 0 ? `+${centsError}` : centsError) : '0'}
+            </span>
+          </div>
+        </div>
+
+        {/* Pitch Cents Deviation Gauge */}
+        <div className="pitch-gauge-container">
+          <div 
+            className="pitch-gauge-marker"
+            style={{ 
+              left: `${currentFreq > 0 ? getGaugeLeftPercentage(centsError) : 50}%`,
+              background: currentFreq === 0 ? '#b2bec3' : 
+                          Math.abs(centsError) <= 30 ? 'var(--success-color)' : 
+                          Math.abs(centsError) <= 80 ? '#ffeaa7' : 'var(--error-color)'
+            }}
+          />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '0.65rem', color: '#b2bec3', marginTop: '6px' }}>
+          <span>낮음 (-50c)</span>
+          <span>정음 (0)</span>
+          <span>높음 (+50c)</span>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="recorder-btn-group">
+        <button className="rec-btn rec-btn-listen" onClick={handleListenExample} disabled={isRecording}>
+          <span>🎵 예시 듣기</span>
+        </button>
+        {!isRecording ? (
+          <button className="rec-btn rec-btn-start" onClick={startRecording}>
+            <span>🎙️ 채점 시작</span>
+          </button>
+        ) : (
+          <button className="rec-btn rec-btn-stop" onClick={stopRecording}>
+            <span>⏹️ 채점 중지</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default PracticeRecorder;

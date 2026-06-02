@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 
-const ScoreViewer = ({ musicXmlUrl }) => {
+const ScoreViewer = ({ musicXmlUrl, scoredNotes }) => {
   const containerRef = useRef(null);
   const osmdRef = useRef(null);
   const [loading, setLoading] = useState(true);
@@ -67,12 +67,102 @@ const ScoreViewer = ({ musicXmlUrl }) => {
 
     return () => {
       isMounted = false;
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
-      }
       osmdRef.current = null;
     };
   }, [musicXmlUrl]);
+
+  // Color OSMD notes when rendering completes or scoredNotes changes
+  useEffect(() => {
+    if (!loading && osmdRef.current) {
+      colorNotesInOSMD(osmdRef.current, scoredNotes);
+    }
+  }, [loading, scoredNotes]);
+
+  const colorNotesInOSMD = (osmd, notes) => {
+    const measures = osmd.GraphicSheet?.MeasureList;
+    if (!measures) return;
+
+    const colorMap = {
+      'Excellent': '#00b894',
+      'Good': '#55efc4',
+      'Almost': '#fdcb6e',
+      'Wrong': '#d63031'
+    };
+
+    // 1. Reset colors if notes is empty/null
+    if (!notes || notes.length === 0) {
+      measures.forEach((measureList) => {
+        const staffMeasure = measureList[0];
+        if (staffMeasure && staffMeasure.staffEntries) {
+          staffMeasure.staffEntries.forEach((staffEntry) => {
+            if (!staffEntry.voiceEntries) return;
+            staffEntry.voiceEntries.forEach((voiceEntry) => {
+              if (!voiceEntry.notes) return;
+              voiceEntry.notes.forEach((gNote) => {
+                if (gNote.sourceNote) {
+                  gNote.sourceNote.NoteheadColor = undefined;
+                  gNote.sourceNote.StemColor = undefined;
+                }
+              });
+            });
+          });
+        }
+      });
+      try {
+        osmd.render();
+      } catch (err) {
+        console.error("Failed to reset note colors:", err);
+      }
+      return;
+    }
+
+    // 2. Map notes to lookup status
+    const statusMap = {};
+    notes.forEach((note) => {
+      statusMap[`${note.measureNumber}-${note.noteIndex}`] = note.resultStatus;
+    });
+
+    // 3. Apply colors
+    measures.forEach((measureList) => {
+      const staffMeasure = measureList[0];
+      if (!staffMeasure) return;
+
+      const measureNumber = staffMeasure.ParentMeasure?.MeasureNumber || 0;
+      let playableNoteCounter = 1;
+
+      const staffEntries = staffMeasure.staffEntries;
+      if (!staffEntries) return;
+
+      staffEntries.forEach((staffEntry) => {
+        if (!staffEntry.voiceEntries) return;
+        staffEntry.voiceEntries.forEach((voiceEntry) => {
+          if (!voiceEntry.notes) return;
+          voiceEntry.notes.forEach((gNote) => {
+            if (!gNote.sourceNote) return;
+            
+            // Check if it's a rest
+            const isRest = (typeof gNote.sourceNote.isRest === 'function' && gNote.sourceNote.isRest()) || !gNote.sourceNote.Pitch;
+            if (isRest) return;
+
+            const key = `${measureNumber}-${playableNoteCounter}`;
+            const status = statusMap[key];
+            if (status) {
+              const color = colorMap[status];
+              gNote.sourceNote.NoteheadColor = color;
+              gNote.sourceNote.StemColor = color;
+            }
+            playableNoteCounter++;
+          });
+        });
+      });
+    });
+
+    try {
+      osmd.render();
+    } catch (err) {
+      console.error("Failed to render note colors:", err);
+    }
+  };
 
   if (!musicXmlUrl) {
     return (
@@ -98,22 +188,24 @@ const ScoreViewer = ({ musicXmlUrl }) => {
           <p>{error}</p>
         </div>
       )}
-      <div 
-        ref={containerRef} 
-        style={{ 
-          width: '100%', 
-          background: 'white',
-          borderRadius: '8px',
-          padding: '10px',
-          ...(loading || error ? {
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            opacity: 0,
-            pointerEvents: 'none'
-          } : {})
-        }} 
-      />
+      <div key={musicXmlUrl} className="osmd-container-wrapper" style={{ width: '100%' }}>
+        <div 
+          ref={containerRef} 
+          style={{ 
+            width: '100%', 
+            background: 'white',
+            borderRadius: '8px',
+            padding: '10px',
+            ...(loading || error ? {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              opacity: 0,
+              pointerEvents: 'none'
+            } : {})
+          }} 
+        />
+      </div>
     </div>
   );
 };
