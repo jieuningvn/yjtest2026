@@ -113,12 +113,13 @@ const FourSeasonsSpring = () => {
 
       {/* 4. 퀴즈 Section */}
       <QuizSection
-        question="이 곡의 총 마디 수는 몇 마디인가요?"
-        options={['12마디', '13마디', '14마디', '15마디']}
-        correctAnswer="14마디"
+        question="이 곡의 마지막 음의 계이름은 무엇인가요?"
+        options={['도', '레', '미', '솔']}
+        correctAnswer="미"
         isCompleted={quizCompleted}
         onComplete={() => setQuizCompleted(true)}
-        successMessage="정답입니다! 🎉"
+        successMessage="정답입니다! 🎉 마지막 음은 ‘미’입니다."
+        errorMessage="다시 생각해 보세요!"
       />
 
       {/* Progress Flow Navigation Footer */}

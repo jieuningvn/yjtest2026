@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const QuizSection = ({ question, options, correctAnswer, isCompleted, onComplete, successMessage }) => {
+const QuizSection = ({ question, options, correctAnswer, isCompleted, onComplete, successMessage, errorMessage }) => {
   const [selected, setSelected] = useState(null);
   const [feedback, setFeedback] = useState('');
 
@@ -11,7 +11,7 @@ const QuizSection = ({ question, options, correctAnswer, isCompleted, onComplete
       setFeedback(successMessage || '정답입니다! 🎉');
       onComplete();
     } else {
-      setFeedback('다시 생각해보세요! ❌');
+      setFeedback(errorMessage || '다시 생각해보세요! ❌');
     }
   };
 

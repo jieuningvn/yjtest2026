@@ -110,12 +110,13 @@ const NewWorldSymphony = () => {
 
       {/* 4. 퀴즈 Section */}
       <QuizSection
-        question="'신세계 교향곡'을 작곡한 사람은 누구일까요?"
-        options={['루트비히 판 베토벤', '안토닌 드보르자크', '볼프강 아마데우스 모차르트', '안토니오 비발디']}
-        correctAnswer="안토닌 드보르자크"
+        question="신세계 교향곡은 몇 년에 작곡되었을까요?"
+        options={['1788년', '1824년', '1893년', '1905년']}
+        correctAnswer="1893년"
         isCompleted={quizCompleted}
         onComplete={() => setQuizCompleted(true)}
-        successMessage="정답입니다! 🎉"
+        successMessage={`🎉 정답입니다!\n드보르자크의 교향곡 제9번 「신세계로부터」는 1893년에 완성된 작품입니다.`}
+        errorMessage="❌ 다시 생각해 보세요!"
       />
 
       {/* 5. 다음 단계 버튼 Footer */}
