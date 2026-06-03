@@ -576,20 +576,55 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
             </div>
           )}
 
-          {/* 1. [채점 시작] / [채점 중지] 버튼 */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '5px' }}>
-            {!isRecording ? (
-              <button className="rec-btn rec-btn-start" onClick={startRecording} style={{ width: '100%', maxWidth: '300px', height: '50px', justifyContent: 'center' }}>
-                <span>🎙️ 채점 시작</span>
-              </button>
-            ) : (
-              <button className="rec-btn rec-btn-stop" onClick={stopRecording} style={{ width: '100%', maxWidth: '300px', height: '50px', justifyContent: 'center' }}>
-                <span>⏹️ 채점 중지</span>
-              </button>
-            )}
-            <div style={{ fontSize: '0.8rem', color: '#636e72', textAlign: 'center', fontWeight: 500, marginTop: '5px' }}>
-              ℹ️ 반주가 자동으로 중지되고 채점이 시작됩니다.
+          {/* 1. 채점 버튼 및 시각 메트로놈 가로 배치 영역 */}
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            width: '100%',
+            marginTop: '5px'
+          }}>
+            {/* Left: [채점 시작] / [채점 중지] 버튼 */}
+            <div style={{ flex: '1 1 200px', maxWidth: '300px' }}>
+              {!isRecording ? (
+                <button className="rec-btn rec-btn-start" onClick={startRecording} style={{ width: '100%', height: '50px', justifyContent: 'center', margin: 0 }}>
+                  <span>🎙️ 채점 시작</span>
+                </button>
+              ) : (
+                <button className="rec-btn rec-btn-stop" onClick={stopRecording} style={{ width: '100%', height: '50px', justifyContent: 'center', margin: 0 }}>
+                  <span>⏹️ 채점 중지</span>
+                </button>
+              )}
             </div>
+
+            {/* Right: 시각 메트로놈 (빨간 불빛 + BPM) */}
+            <div style={{
+              flex: '0 1 auto',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#1e272e',
+              borderRadius: '12px',
+              padding: '10px 20px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              boxSizing: 'border-box',
+              minHeight: '50px',
+              minWidth: '140px'
+            }}>
+              <VisualMetronome
+                bpm={bpm}
+                beats={beats}
+                isPlaying={isRecording}
+                onBeat={handleBeat}
+              />
+            </div>
+          </div>
+
+          <div style={{ fontSize: '0.8rem', color: '#636e72', fontWeight: 500, marginTop: '-5px', marginBottom: '5px' }}>
+            ℹ️ 반주가 자동으로 중지되고 채점이 시작됩니다.
           </div>
 
           {/* 2. BPM 설정 영역 */}
@@ -598,16 +633,6 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
               value={bpm}
               onChange={(newBpm) => setBpm(newBpm)}
               disabled={isRecording}
-            />
-          </div>
-
-          {/* 3. 시각 메트로놈 */}
-          <div style={{ width: '100%' }}>
-            <VisualMetronome
-              bpm={bpm}
-              beats={beats}
-              isPlaying={isRecording}
-              onBeat={handleBeat}
             />
           </div>
 

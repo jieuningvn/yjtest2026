@@ -91,34 +91,27 @@ export const VisualMetronome: React.FC<VisualMetronomeProps> = ({
 
   return (
     <div style={{
-      background: '#1e272e',
-      borderRadius: '12px',
-      padding: '10px 15px',
-      display: 'flex',
+      display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '12px',
-      width: '100%',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-      border: '1px solid rgba(255, 255, 255, 0.05)',
-      marginTop: '10px',
+      gap: '10px',
       boxSizing: 'border-box',
     }}>
       {/* Blinking Indicator Light */}
       <div style={{
-        width: '20px',
-        height: '20px',
+        width: '18px',
+        height: '18px',
         borderRadius: '50%',
         background: isPlaying && isFlashActive
           ? '#ff3838'
           : '#400a0a',
         boxShadow: isPlaying && isFlashActive
-          ? '0 0 15px #ff3838, 0 0 8px rgba(255, 56, 56, 0.8)'
+          ? '0 0 12px #ff3838, 0 0 6px rgba(255, 56, 56, 0.8)'
           : '0 0 4px rgba(0, 0, 0, 0.5) inset',
         border: isPlaying && isFlashActive
           ? '1.5px solid #ff6b81'
           : '1.5px solid #2c0000',
-        transform: isPlaying && isFlashActive ? 'scale(1.2)' : 'scale(1)',
+        transform: isPlaying && isFlashActive ? 'scale(1.15)' : 'scale(1)',
         transition: isPlaying && isFlashActive ? 'transform 0.05s ease-out' : 'all 0.15s ease-out',
       }} />
 
@@ -133,5 +126,6 @@ export const VisualMetronome: React.FC<VisualMetronomeProps> = ({
       </span>
     </div>
   );
+
 
 };
