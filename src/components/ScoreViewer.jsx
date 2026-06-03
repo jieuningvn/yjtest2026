@@ -32,6 +32,7 @@ const ScoreViewer = ({ musicXmlUrl, scoredNotes }) => {
             drawTitle: false, // Turn off title in score since we show page title
             drawPartNames: false,
             responsive: true,
+            newSystemFromXML: false,
           });
 
           await osmdRef.current.load(musicXmlUrl);
@@ -39,11 +40,10 @@ const ScoreViewer = ({ musicXmlUrl, scoredNotes }) => {
           if (!isMounted) return;
 
           // Zoom setting for readable size
-          osmdRef.current.zoom = 0.8;
+          osmdRef.current.zoom = 0.65;
 
           // Configure engraving rules for clean, stable layout
-          osmdRef.current.EngravingRules.FixedMeasuresPerLine = true;
-          osmdRef.current.EngravingRules.MeasuresPerLine = 4;
+          osmdRef.current.EngravingRules.RenderXMeasuresPerLineAkaSystem = 4;
           osmdRef.current.EngravingRules.NewSystemAtMeasureEndParameters = [];
           osmdRef.current.EngravingRules.FixedMeasureWidth = false;
 
@@ -188,11 +188,12 @@ const ScoreViewer = ({ musicXmlUrl, scoredNotes }) => {
           <p>{error}</p>
         </div>
       )}
-      <div key={musicXmlUrl} className="osmd-container-wrapper" style={{ width: '100%' }}>
+      <div key={musicXmlUrl} className="osmd-container-wrapper" style={{ width: '100%', overflowX: 'auto' }}>
         <div 
           ref={containerRef} 
           style={{ 
             width: '100%', 
+            minWidth: '750px',
             background: 'white',
             borderRadius: '8px',
             padding: '10px',

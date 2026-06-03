@@ -86,9 +86,9 @@ const TongTongTongTong = () => {
 
       {/* 4. 퀴즈 Section */}
       <QuizSection
-        question="이 동요의 제목은 무엇일까요?"
-        options={['통통통통', '나비야', '비행기', '곰 세 마리']}
-        correctAnswer="통통통통"
+        question="맨 첫 번째 음의 박자는 몇 박자인가요?"
+        options={['1박자', '2박자', '3박자', '4박자']}
+        correctAnswer="1박자"
         isCompleted={quizCompleted}
         onComplete={() => setQuizCompleted(true)}
       />
