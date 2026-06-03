@@ -28,18 +28,22 @@ const ScoreViewer = ({ musicXmlUrl, scoredNotes }) => {
     const scoreWidth = containerRef.current.offsetWidth || 750;
 
     if (parentWidth > 0 && scoreWidth > 0) {
-      const calculatedScale = Math.min(1, parentWidth / scoreWidth);
+      // Set minScale to prevent score from shrinking too much on mobile devices (e.g. 390px, 430px)
+      const minScale = 0.7;
+      const calculatedScale = Math.max(minScale, Math.min(1, parentWidth / scoreWidth));
       setScale(calculatedScale);
 
       // Height compensation to close empty spaces left by CSS scale transform
       const originalHeight = containerRef.current.offsetHeight;
-      const newHeight = originalHeight * calculatedScale;
+      // Add a safety buffer of 25px to accommodate potential horizontal scrollbar overlaps
+      const newHeight = originalHeight * calculatedScale + (calculatedScale < 1 ? 25 : 0);
       setWrapperHeight(newHeight > 0 ? `${newHeight}px` : 'auto');
 
       containerRef.current.style.transform = `scale(${calculatedScale})`;
       containerRef.current.style.transformOrigin = 'top left';
     }
   };
+
 
   useEffect(() => {
     let isMounted = true;
