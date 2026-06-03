@@ -25,14 +25,7 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
   const [showWarning, setShowWarning] = useState(false);
   const [scoredResult, setScoredResult] = useState<ScoringResult | null>(null);
   
-  // Microphone diagnostics debugging state
-  const [debugInfo, setDebugInfo] = useState<{
-    isSecureContext: boolean;
-    hasMediaDevices: boolean;
-    hasGetUserMedia: boolean;
-    errorName: string | null;
-    errorMessage: string | null;
-  } | null>(null);
+
 
   const [bpm, setBpm] = useState<number>(60);
   const [beats, setBeats] = useState<number>(4);
@@ -133,12 +126,10 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
     const hasMedia = typeof navigator !== 'undefined' && !!navigator.mediaDevices;
     const hasGetUserMedia = hasMedia && typeof navigator.mediaDevices.getUserMedia === 'function';
     
-    setDebugInfo({
+    console.debug("[Microphone Diagnostics] Initializing: ", {
       isSecureContext: isSecure,
       hasMediaDevices: hasMedia,
-      hasGetUserMedia: hasGetUserMedia,
-      errorName: null,
-      errorMessage: null
+      hasGetUserMedia: hasGetUserMedia
     });
 
     // Pre-check system constraints to prevent browser errors
@@ -149,13 +140,7 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
         ? "모바일 마이크 사용을 위해 HTTPS 접속이 필요합니다."
         : "이 기기나 브라우저에서 마이크 사용(mediaDevices)을 지원하지 않습니다.";
 
-      setDebugInfo({
-        isSecureContext: isSecure,
-        hasMediaDevices: hasMedia,
-        hasGetUserMedia: hasGetUserMedia,
-        errorName: "NotSupportedError",
-        errorMessage: "navigator.mediaDevices is undefined"
-      });
+      console.warn("[Microphone Diagnostics] Not Supported: navigator.mediaDevices is undefined");
 
       setErrorMessage(errorMsg);
       setIsRecording(false);
@@ -258,12 +243,10 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
       const errName = err ? (err.name || "UnknownError") : "UnknownError";
       const errMsg = err ? (err.message || String(err)) : "No error message provided";
       
-      setDebugInfo({
+      console.error(`[Microphone Diagnostics] Access Failed: ${errName} - ${errMsg}`, {
         isSecureContext: isSecure,
         hasMediaDevices: hasMedia,
-        hasGetUserMedia: hasGetUserMedia,
-        errorName: errName,
-        errorMessage: errMsg
+        hasGetUserMedia: hasGetUserMedia
       });
 
       setErrorMessage(`마이크 연결에 실패했습니다. 권한을 허용해 주세요. (에러: ${errName} - ${errMsg})`);
@@ -306,7 +289,6 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
     setScoredResult(null);
     setShowWarning(false);
     onScored(null); // Reset colors in sheet music
-    setDebugInfo(null);
   };
 
   const handleBeat = (beatNumber: number) => {
@@ -594,49 +576,23 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
             </div>
           )}
 
-          {debugInfo && (
-            <div style={{
-              background: '#2d3436',
-              color: '#dfe6e9',
-              borderRadius: '12px',
-              padding: '15px',
-              fontSize: '0.85rem',
-              fontFamily: 'monospace',
-              border: '1.5px solid var(--primary-color)',
-              boxShadow: '0 4px 15px rgba(99, 102, 241, 0.15)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px',
-              width: '100%',
-              textAlign: 'left',
-              boxSizing: 'border-box',
-              marginTop: '5px'
-            }}>
-              <div style={{ fontWeight: 'bold', color: 'var(--primary-color)', borderBottom: '1px solid rgba(99, 102, 241, 0.3)', paddingBottom: '4px', marginBottom: '4px' }}>
-                🔍 마이크 디버그 패널 (Microphone Debug Panel)
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>isSecureContext (보안 콘텍스트):</span>
-                <span style={{ color: debugInfo.isSecureContext ? 'var(--success-color)' : 'var(--error-color)', fontWeight: 'bold' }}>{String(debugInfo.isSecureContext)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>navigator.mediaDevices 존재 여부:</span>
-                <span style={{ color: debugInfo.hasMediaDevices ? 'var(--success-color)' : 'var(--error-color)', fontWeight: 'bold' }}>{String(debugInfo.hasMediaDevices)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>getUserMedia API 존재 여부:</span>
-                <span style={{ color: debugInfo.hasGetUserMedia ? 'var(--success-color)' : 'var(--error-color)', fontWeight: 'bold' }}>{String(debugInfo.hasGetUserMedia)}</span>
-              </div>
-              <div style={{ borderTop: '1px dashed rgba(255,255,255,0.1)', marginTop: '4px', paddingTop: '4px' }}>
-                <span style={{ color: '#b2bec3' }}>발생한 에러:</span>
-                <div style={{ color: debugInfo.errorName ? 'var(--error-color)' : 'var(--success-color)', fontWeight: 'bold', marginTop: '2px', wordBreak: 'break-all' }}>
-                  {debugInfo.errorName ? `${debugInfo.errorName}: ${debugInfo.errorMessage}` : '없음 (None)'}
-                </div>
-              </div>
+          {/* 1. [채점 시작] / [채점 중지] 버튼 */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '5px' }}>
+            {!isRecording ? (
+              <button className="rec-btn rec-btn-start" onClick={startRecording} style={{ width: '100%', maxWidth: '300px', height: '50px', justifyContent: 'center' }}>
+                <span>🎙️ 채점 시작</span>
+              </button>
+            ) : (
+              <button className="rec-btn rec-btn-stop" onClick={stopRecording} style={{ width: '100%', maxWidth: '300px', height: '50px', justifyContent: 'center' }}>
+                <span>⏹️ 채점 중지</span>
+              </button>
+            )}
+            <div style={{ fontSize: '0.8rem', color: '#636e72', textAlign: 'center', fontWeight: 500, marginTop: '5px' }}>
+              ℹ️ 반주가 자동으로 중지되고 채점이 시작됩니다.
             </div>
-          )}
+          </div>
 
-          {/* BPM 설정 영역 */}
+          {/* 2. BPM 설정 영역 */}
           <div style={{ width: '100%' }}>
             <BpmControl
               value={bpm}
@@ -645,7 +601,17 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
             />
           </div>
 
-          {/* 카운트인 오버레이 안내 */}
+          {/* 3. 시각 메트로놈 */}
+          <div style={{ width: '100%' }}>
+            <VisualMetronome
+              bpm={bpm}
+              beats={beats}
+              isPlaying={isRecording}
+              onBeat={handleBeat}
+            />
+          </div>
+
+          {/* 4. 카운트인 오버레이 안내 */}
           {isRecording && isCountingIn && (
             <div style={{
               background: 'rgba(0, 206, 201, 0.08)',
@@ -667,7 +633,7 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
             </div>
           )}
 
-          {/* 실시간 수집 통계 패널 */}
+          {/* 5. 실시간 수집 통계 패널 */}
           {isRecording && !isCountingIn && (
             <div style={{
               background: 'rgba(46, 204, 113, 0.06)',
@@ -696,7 +662,7 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
             </div>
           )}
 
-          {/* Answer Timeline Preview */}
+          {/* 6. Answer Timeline Preview */}
           <div className="timeline-preview">
             <h4>정답 악보 타임라인 (첫 4마디 MVP)</h4>
             {answerTimeline.length === 0 ? (
@@ -715,7 +681,7 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
             )}
           </div>
 
-          {/* Real-time Pitch Detection Display */}
+          {/* 7. Real-time Pitch Detection Display */}
           <div className="pitch-display-card">
             <div className="pitch-display-grid">
               <div className="pitch-metric">
@@ -760,28 +726,6 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
               <span>정음 (0)</span>
               <span>높음 (+50c)</span>
             </div>
-          </div>
-
-          {/* Controls: BPM, 메트로놈, 짧은 안내, 채점 버튼 */}
-          <div className="recorder-btn-group" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '10px' }}>
-            <VisualMetronome
-              bpm={bpm}
-              beats={beats}
-              isPlaying={isRecording}
-              onBeat={handleBeat}
-            />
-            <div style={{ fontSize: '0.85rem', color: '#636e72', textAlign: 'center', fontWeight: 500, margin: '5px 0' }}>
-              ℹ️ 반주가 자동으로 중지되고 채점이 시작됩니다.
-            </div>
-            {!isRecording ? (
-              <button className="rec-btn rec-btn-start" onClick={startRecording} style={{ width: '100%', maxWidth: '300px', height: '50px', justifyContent: 'center' }}>
-                <span>🎙️ 채점 시작</span>
-              </button>
-            ) : (
-              <button className="rec-btn rec-btn-stop" onClick={stopRecording} style={{ width: '100%', maxWidth: '300px', height: '50px', justifyContent: 'center' }}>
-                <span>⏹️ 채점 중지</span>
-              </button>
-            )}
           </div>
         </section>
       )}

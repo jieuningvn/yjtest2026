@@ -86,8 +86,7 @@ body {
   border-radius: 12px;
   padding: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  overflow-x: auto !important;
-  -webkit-overflow-scrolling: touch;
+  overflow-x: hidden !important;
   box-sizing: border-box;
 }
 
@@ -830,7 +829,7 @@ body {
 
   /* Score container scroll behavior on mobile */
   .musicxml-viewer-container {
-    overflow-x: auto !important;
+    overflow-x: hidden !important;
     max-width: 100% !important;
   }
 }
@@ -860,7 +859,7 @@ body {
   }
 
   .musicxml-viewer-container {
-    overflow-x: auto !important;
+    overflow-x: hidden !important;
     max-width: 100% !important;
   }
 }
@@ -880,7 +879,7 @@ body {
   }
 
   .musicxml-viewer-container {
-    overflow-x: auto !important;
+    overflow-x: hidden !important;
     max-width: 100% !important;
   }
 }

@@ -14,35 +14,24 @@ const ScoreViewer = ({ musicXmlUrl, scoredNotes }) => {
   const updateScale = () => {
     if (!containerRef.current || !wrapperRef.current) return;
 
-    // Desktop viewports (>= 1025px) keep standard scale
-    const isDesktop = window.innerWidth >= 1025;
-    if (isDesktop) {
-      setScale(1);
-      setWrapperHeight('auto');
-      containerRef.current.style.transform = 'none';
-      containerRef.current.style.transformOrigin = 'unset';
-      return;
-    }
-
     const parentWidth = wrapperRef.current.clientWidth;
     const scoreWidth = containerRef.current.offsetWidth || 750;
 
     if (parentWidth > 0 && scoreWidth > 0) {
-      // Set minScale to prevent score from shrinking too much on mobile devices (e.g. 390px, 430px)
-      const minScale = 0.7;
-      const calculatedScale = Math.max(minScale, Math.min(1, parentWidth / scoreWidth));
+      // Calculate scale to fit parent width exactly, preventing horizontal scrolling
+      const calculatedScale = Math.min(1, parentWidth / scoreWidth);
       setScale(calculatedScale);
 
       // Height compensation to close empty spaces left by CSS scale transform
       const originalHeight = containerRef.current.offsetHeight;
-      // Add a safety buffer of 25px to accommodate potential horizontal scrollbar overlaps
-      const newHeight = originalHeight * calculatedScale + (calculatedScale < 1 ? 25 : 0);
+      const newHeight = originalHeight * calculatedScale;
       setWrapperHeight(newHeight > 0 ? `${newHeight}px` : 'auto');
 
       containerRef.current.style.transform = `scale(${calculatedScale})`;
       containerRef.current.style.transformOrigin = 'top left';
     }
   };
+
 
 
   useEffect(() => {
@@ -274,7 +263,7 @@ const ScoreViewer = ({ musicXmlUrl, scoredNotes }) => {
         className="osmd-container-wrapper" 
         style={{ 
           width: '100%', 
-          overflowX: 'auto',
+          overflowX: 'hidden',
           overflowY: 'hidden',
           height: wrapperHeight,
           transition: 'height 0.2s ease',
