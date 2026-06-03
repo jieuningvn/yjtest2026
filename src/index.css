@@ -13,6 +13,13 @@
   padding: 0;
 }
 
+html, body, #root {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden !important;
+  box-sizing: border-box;
+}
+
 body {
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   background: var(--bg-gradient);
@@ -28,6 +35,8 @@ body {
   width: 100%;
   max-width: 480px;
   padding: 20px;
+  min-width: 0 !important;
+  box-sizing: border-box;
 }
 
 .lesson-page {
@@ -39,6 +48,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 30px;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
 }
 
 .lesson-header h1 {
@@ -52,6 +64,9 @@ body {
   padding: 20px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.5);
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
 }
 
 .section h3 {
@@ -62,13 +77,24 @@ body {
 }
 
 /* MusicXML Viewer */
-.musicxml-viewer-container {
-  width: 100%;
+.musicxml-viewer-container,
+.osmd-container-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
   background: white;
   border-radius: 12px;
   padding: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
+.osmd-container-wrapper svg,
+.musicxml-viewer-container svg {
+  max-width: none !important;
+  display: block;
 }
 
 /* Audio Player */
@@ -174,6 +200,8 @@ body {
 .app-container {
   max-width: 800px;
   width: 100%;
+  min-width: 0 !important;
+  box-sizing: border-box;
 }
 
 /* Page Header & Navigation Info */
@@ -480,17 +508,45 @@ body {
 }
 
 /* Success page style */
+.success-page-outer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.confetti-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
+}
+
 .success-page-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 40px;
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
+  padding: 50px 40px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
   border-radius: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  width: 100%;
+  max-width: 550px;
+  box-sizing: border-box;
+  z-index: 2;
+  position: relative;
+  animation: fadeInSuccess 0.8s ease-out;
 }
 
 .success-badge-icon {
@@ -507,10 +563,22 @@ body {
 
 .success-desc {
   font-size: 1.05rem;
-  color: #636e72;
+  color: #2d3436;
   margin-bottom: 30px;
   line-height: 1.6;
 }
+
+@keyframes fadeInSuccess {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 
 /* Animations */
 @keyframes pulse {
@@ -711,6 +779,117 @@ body {
   border-color: var(--primary-color);
   background: rgba(99, 102, 241, 0.05);
   font-weight: 600;
+}
+
+/* ========================================================
+   Responsive Breakpoints & Layout Optimization
+   ======================================================== */
+
+/* 1. Common Responsive Classes & Button Enhancements */
+.rec-btn {
+  min-height: 44px; /* Touch target minimum size */
+}
+
+/* On screens larger than mobile, keep descriptions expanded and hide toggle buttons */
+@media (min-width: 769px) {
+  .intro-section .mission-text-box {
+    display: block !important;
+  }
+  .intro-section .desc-toggle-btn {
+    display: none !important;
+  }
+}
+
+/* 2. 390px ~ 480px: Smartphone */
+@media (max-width: 480px) {
+  .app-container {
+    padding: 10px;
+  }
+  
+  .lesson-page {
+    padding: 20px !important;
+    gap: 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Descriptions collapsed by default on mobile */
+  .intro-section:not(.expanded) .mission-text-box {
+    display: none;
+  }
+
+  .quiz-options {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Make sure buttons fill the width and are easy to tap */
+  .rec-btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Score container scroll behavior on mobile */
+  .musicxml-viewer-container {
+    overflow-x: auto !important;
+    max-width: 100% !important;
+  }
+}
+
+/* 3. 481px ~ 768px: Large Smartphone / Fold Closed */
+@media (min-width: 481px) and (max-width: 768px) {
+  .app-container {
+    padding: 15px;
+    max-width: 100%;
+  }
+
+  .lesson-page {
+    padding: 25px !important;
+    gap: 25px !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Descriptions collapsed by default on mobile */
+  .intro-section:not(.expanded) .mission-text-box {
+    display: none;
+  }
+
+  .rec-btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .musicxml-viewer-container {
+    overflow-x: auto !important;
+    max-width: 100% !important;
+  }
+}
+
+/* 4. 769px ~ 1024px: Tablet / Fold Opened */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .app-container {
+    max-width: 800px !important; /* Keep aligned with other pages */
+    padding: 20px;
+  }
+
+  .lesson-page {
+    padding: 30px !important;
+    gap: 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .musicxml-viewer-container {
+    overflow-x: auto !important;
+    max-width: 100% !important;
+  }
+}
+
+/* 5. 1025px and up: Desktop */
+@media (min-width: 1025px) {
+  .app-container {
+    max-width: 800px !important; /* Retain original layout */
+  }
 }
 
 

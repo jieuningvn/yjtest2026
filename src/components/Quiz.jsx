@@ -7,7 +7,7 @@ const Quiz = () => {
   const handleAnswer = (answer) => {
     setSelected(answer);
     if (answer === '미') {
-      setResult('정답입니다!');
+      setResult('정답입니다! 🎉');
     } else {
       setResult('다시 생각해보세요');
     }
@@ -29,7 +29,7 @@ const Quiz = () => {
         ))}
       </div>
       {result && (
-        <p className={`quiz-result ${result === '정답입니다!' ? 'success' : 'error'}`}>
+        <p className={`quiz-result ${result === '정답입니다! 🎉' ? 'success' : 'error'}`}>
           {result}
         </p>
       )}

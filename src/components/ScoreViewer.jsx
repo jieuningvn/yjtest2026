@@ -3,9 +3,43 @@ import { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 
 const ScoreViewer = ({ musicXmlUrl, scoredNotes }) => {
   const containerRef = useRef(null);
+  const wrapperRef = useRef(null);
   const osmdRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [scale, setScale] = useState(1);
+  const [wrapperHeight, setWrapperHeight] = useState('auto');
+
+  // Calculates scale dynamically to fit score within parent viewport bounds
+  const updateScale = () => {
+    if (!containerRef.current || !wrapperRef.current) return;
+
+    // Desktop viewports (>= 1025px) keep standard scale
+    const isDesktop = window.innerWidth >= 1025;
+    if (isDesktop) {
+      setScale(1);
+      setWrapperHeight('auto');
+      containerRef.current.style.transform = 'none';
+      containerRef.current.style.transformOrigin = 'unset';
+      return;
+    }
+
+    const parentWidth = wrapperRef.current.clientWidth;
+    const scoreWidth = containerRef.current.offsetWidth || 750;
+
+    if (parentWidth > 0 && scoreWidth > 0) {
+      const calculatedScale = Math.min(1, parentWidth / scoreWidth);
+      setScale(calculatedScale);
+
+      // Height compensation to close empty spaces left by CSS scale transform
+      const originalHeight = containerRef.current.offsetHeight;
+      const newHeight = originalHeight * calculatedScale;
+      setWrapperHeight(newHeight > 0 ? `${newHeight}px` : 'auto');
+
+      containerRef.current.style.transform = `scale(${calculatedScale})`;
+      containerRef.current.style.transformOrigin = 'top left';
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -43,16 +77,38 @@ const ScoreViewer = ({ musicXmlUrl, scoredNotes }) => {
           osmdRef.current.zoom = 0.65;
 
           // Configure engraving rules for clean, stable layout
-          osmdRef.current.EngravingRules.RenderXMeasuresPerLineAkaSystem = 4;
-          osmdRef.current.EngravingRules.NewSystemAtMeasureEndParameters = [];
-          osmdRef.current.EngravingRules.FixedMeasureWidth = false;
+          const isSpring = musicXmlUrl && musicXmlUrl.includes('spring');
+          const isNewWorld = musicXmlUrl && musicXmlUrl.includes('ssgscore');
+
+          if (isSpring) {
+            // Vivaldi Spring: custom phrase-based breaking [5, 4, 5] measures
+            osmdRef.current.EngravingRules.NewSystemAtMeasureEndParameters = [5, 9];
+            osmdRef.current.EngravingRules.RenderXMeasuresPerLineAkaSystem = undefined;
+            osmdRef.current.EngravingRules.FixedMeasureWidth = true;
+            osmdRef.current.EngravingRules.StretchLastSystemLine = true;
+          } else if (isNewWorld) {
+            // New World Symphony: force 4 measures per line
+            osmdRef.current.EngravingRules.RenderXMeasuresPerLineAkaSystem = 4;
+            osmdRef.current.EngravingRules.NewSystemAtMeasureEndParameters = [];
+            osmdRef.current.EngravingRules.FixedMeasureWidth = true;
+            osmdRef.current.EngravingRules.StretchLastSystemLine = true;
+          } else {
+            // TongTongTongTong & generic scores: force 4 measures per line
+            osmdRef.current.EngravingRules.RenderXMeasuresPerLineAkaSystem = 4;
+            osmdRef.current.EngravingRules.NewSystemAtMeasureEndParameters = [];
+            osmdRef.current.EngravingRules.FixedMeasureWidth = false;
+          }
 
           // Margins
           osmdRef.current.EngravingRules.PageLeftMargin = 20;
           osmdRef.current.EngravingRules.PageRightMargin = 20;
 
           osmdRef.current.render();
-          if (isMounted) setLoading(false);
+          if (isMounted) {
+            setLoading(false);
+            // Trigger scale calculation once score has finished rendering
+            setTimeout(updateScale, 100);
+          }
         } catch (err) {
           console.error('Error loading MusicXML:', err);
           if (isMounted) {
@@ -75,8 +131,28 @@ const ScoreViewer = ({ musicXmlUrl, scoredNotes }) => {
   useEffect(() => {
     if (!loading && osmdRef.current) {
       colorNotesInOSMD(osmdRef.current, scoredNotes);
+      // Recalculate scale after note coloring (as it triggers re-rendering)
+      setTimeout(updateScale, 100);
     }
   }, [loading, scoredNotes]);
+
+  // Handle screen resize, orientation shifts, and initial delay shifts
+  useEffect(() => {
+    const handleResize = () => {
+      updateScale();
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    if (!loading) {
+      // Extra layouts sync delay
+      setTimeout(updateScale, 150);
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [loading]);
 
   const colorNotesInOSMD = (osmd, notes) => {
     const measures = osmd.GraphicSheet?.MeasureList;
@@ -188,7 +264,19 @@ const ScoreViewer = ({ musicXmlUrl, scoredNotes }) => {
           <p>{error}</p>
         </div>
       )}
-      <div key={musicXmlUrl} className="osmd-container-wrapper" style={{ width: '100%', overflowX: 'auto' }}>
+      <div 
+        ref={wrapperRef} 
+        key={musicXmlUrl} 
+        className="osmd-container-wrapper" 
+        style={{ 
+          width: '100%', 
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          height: wrapperHeight,
+          transition: 'height 0.2s ease',
+          position: 'relative'
+        }}
+      >
         <div 
           ref={containerRef} 
           style={{ 
@@ -197,6 +285,7 @@ const ScoreViewer = ({ musicXmlUrl, scoredNotes }) => {
             background: 'white',
             borderRadius: '8px',
             padding: '10px',
+            transition: 'transform 0.2s ease',
             ...(loading || error ? {
               position: 'absolute',
               top: 0,

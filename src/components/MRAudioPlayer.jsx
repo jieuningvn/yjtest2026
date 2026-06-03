@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const MRAudioPlayer = ({ audioUrl, onPlayed, trackName, playerRef }) => {
+const MRAudioPlayer = ({ audioUrl, onPlayed, trackName, playerRef, hideUI, title }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasPlayed, setHasPlayed] = useState(false);
   const audioRef = useRef(null);
@@ -17,34 +17,50 @@ const MRAudioPlayer = ({ audioUrl, onPlayed, trackName, playerRef }) => {
   // Expose play/pause/mute functions to parent through playerRef
   useEffect(() => {
     if (playerRef) {
-      playerRef.current = {
-        pause: () => {
-          if (audioRef.current) {
-            audioRef.current.pause();
-            setIsPlaying(false);
-          }
-        },
-        mute: () => {
-          if (audioRef.current) {
-            audioRef.current.muted = true;
-          }
-        },
-        unmute: () => {
-          if (audioRef.current) {
-            audioRef.current.muted = false;
-          }
-        },
-        play: () => {
-          if (audioRef.current) {
-            audioRef.current.play()
-              .then(() => setIsPlaying(true))
-              .catch(err => console.error("External audio playback failed: ", err));
-          }
-        },
-        isPlaying: () => isPlaying
+      if (!playerRef.current) {
+        playerRef.current = {};
+      }
+      playerRef.current.pause = () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        }
       };
+      playerRef.current.mute = () => {
+        if (audioRef.current) {
+          audioRef.current.muted = true;
+        }
+      };
+      playerRef.current.unmute = () => {
+        if (audioRef.current) {
+          audioRef.current.muted = false;
+        }
+      };
+      playerRef.current.play = () => {
+        if (audioRef.current) {
+          audioRef.current.play()
+            .then(() => setIsPlaying(true))
+            .catch(err => console.error("External audio playback failed: ", err));
+        }
+      };
+      playerRef.current.isPlaying = () => isPlaying;
     }
   }, [playerRef, isPlaying]);
+
+  // Call onStateChange whenever isPlaying changes
+  useEffect(() => {
+    if (playerRef && playerRef.current && typeof playerRef.current.onStateChange === 'function') {
+      playerRef.current.onStateChange(isPlaying);
+    }
+  }, [isPlaying, playerRef]);
+
+  // Trigger onPlayed callback when playback starts (supports external plays via ref)
+  useEffect(() => {
+    if (isPlaying && !hasPlayed) {
+      setHasPlayed(true);
+      if (onPlayed) onPlayed();
+    }
+  }, [isPlaying, hasPlayed, onPlayed]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -76,10 +92,21 @@ const MRAudioPlayer = ({ audioUrl, onPlayed, trackName, playerRef }) => {
     setIsPlaying(false);
   };
 
+  if (hideUI) {
+    return (
+      <audio
+        ref={audioRef}
+        src={audioUrl}
+        onEnded={handleAudioEnded}
+        style={{ display: 'none' }}
+      />
+    );
+  }
+
   return (
     <div className="audio-player-container">
       <div className="section-header-row">
-        <h3>MR 오디오 플레이어</h3>
+        <h3>{title || "MR 오디오 플레이어"}</h3>
         <span className={`status-indicator ${hasPlayed ? 'done' : 'pending'}`}>
           {hasPlayed ? '✅ 재생 완료' : '❌ 재생 필요'}
         </span>

@@ -13,6 +13,7 @@ const TongTongTongTong = () => {
   const [audioPlayed, setAudioPlayed] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [scoredNotes, setScoredNotes] = useState(null);
+  const [descExpanded, setDescExpanded] = useState(false);
 
   const allStagesCompleted = audioPlayed && quizCompleted;
 
@@ -46,9 +47,26 @@ const TongTongTongTong = () => {
       </div>
 
       {/* 1. 곡 소개 Section */}
-      <section className="section intro-section">
-        <div className="section-header-row">
+      <section className={`section intro-section ${descExpanded ? 'expanded' : ''}`}>
+        <div 
+          className="section-header-row" 
+          onClick={() => setDescExpanded(!descExpanded)} 
+          style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        >
           <h3>곡 소개</h3>
+          <button 
+            className="desc-toggle-btn" 
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'var(--primary-color)', 
+              fontSize: '0.85rem', 
+              fontWeight: 600, 
+              cursor: 'pointer' 
+            }}
+          >
+            {descExpanded ? '접기 ▲' : '더보기 ▼'}
+          </button>
         </div>
         <div className="mission-text-box" style={{ background: 'rgba(255, 255, 255, 0.7)', borderLeft: '4px solid var(--primary-color)', padding: '15px', borderRadius: '4px 12px 12px 4px', fontSize: '0.95rem', lineHeight: '1.6' }}>
           <strong>통통통통 (Tong Tong Tong Tong)</strong>
@@ -67,17 +85,16 @@ const TongTongTongTong = () => {
         <ScoreViewer musicXmlUrl="/tongtong.musicxml" scoredNotes={scoredNotes} />
       </section>
 
-      {/* 3. MR 재생 Section */}
-      <section className={`section player-section ${audioPlayed ? 'completed' : ''}`}>
-        <MRAudioPlayer
-          audioUrl="/music.mp3"
-          trackName="통통통통 (MR)"
-          onPlayed={() => setAudioPlayed(true)}
-          playerRef={mrPlayerRef}
-        />
-      </section>
+      {/* Hidden MR Player state container */}
+      <MRAudioPlayer
+        audioUrl="/music.mp3"
+        trackName="통통통통 (MR)"
+        onPlayed={() => setAudioPlayed(true)}
+        playerRef={mrPlayerRef}
+        hideUI={true}
+      />
 
-      {/* 3.5. 연주 분석 및 채점 Section */}
+      {/* 연주 분석 및 채점 Section */}
       <PracticeRecorder
         musicXmlUrl="/tongtong.musicxml"
         mrPlayerRef={mrPlayerRef}
@@ -91,6 +108,7 @@ const TongTongTongTong = () => {
         correctAnswer="1박자"
         isCompleted={quizCompleted}
         onComplete={() => setQuizCompleted(true)}
+        successMessage="정답입니다! 🎉"
       />
 
       {/* 5. 다음 단계 버튼 Footer */}

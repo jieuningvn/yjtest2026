@@ -1,10 +1,10 @@
 import React from 'react';
 
-const MissionSection = ({ missionText, isCompleted, onComplete }) => {
+const MissionSection = ({ missionText, isCompleted, onComplete, title }) => {
   return (
-    <div className={`section ${isCompleted ? 'completed' : ''}`}>
+    <div className={`section mission-section ${isCompleted ? 'completed' : ''}`}>
       <div className="section-header-row">
-        <h3>미션</h3>
+        <h3>{title || "미션"}</h3>
         <span className={`status-indicator ${isCompleted ? 'done' : 'pending'}`}>
           {isCompleted ? '✅ 완료됨' : '❌ 대기 중'}
         </span>

@@ -14,6 +14,7 @@ const NewWorldSymphony = () => {
   const [audioPlayed, setAudioPlayed] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [scoredNotes, setScoredNotes] = useState(null);
+  const [descExpanded, setDescExpanded] = useState(false);
 
   const allStagesCompleted = audioPlayed && quizCompleted;
 
@@ -51,16 +52,30 @@ const NewWorldSymphony = () => {
       </div>
 
       {/* 1. 곡 소개 Section */}
-      <section className="section intro-section">
-        <div className="section-header-row">
+      <section className={`section intro-section ${descExpanded ? 'expanded' : ''}`}>
+        <div 
+          className="section-header-row" 
+          onClick={() => setDescExpanded(!descExpanded)} 
+          style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        >
           <h3>곡 소개</h3>
+          <button 
+            className="desc-toggle-btn" 
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'var(--primary-color)', 
+              fontSize: '0.85rem', 
+              fontWeight: 600, 
+              cursor: 'pointer' 
+            }}
+          >
+            {descExpanded ? '접기 ▲' : '더보기 ▼'}
+          </button>
         </div>
         <div className="mission-text-box" style={{ background: 'rgba(255, 255, 255, 0.7)', borderLeft: '4px solid var(--primary-color)', padding: '15px', borderRadius: '4px 12px 12px 4px', fontSize: '0.95rem', lineHeight: '1.6' }}>
-          <strong>신세계로부터 (From the New World)</strong>
-          <p style={{ marginTop: '8px' }}>
-            안토닌 드보르자크가 1893년 미국 뉴욕 국립 음악원장으로 재직하던 시절 작곡한 그의 대표적인 교향곡 제9번입니다.
-            미국의 광활한 자연과 흑인 영가, 인디언 민요 등 새로운 세계의 인상에서 깊은 영감을 받아 완성되었습니다.
-            고향에 대한 그리움과 신세계에 대한 경이로움이 가득 찬 역동적이면서도 아름다운 선율을 느껴보세요.
+          <p>
+            드보르자크의 교향곡 제9번 「신세계로부터」는 1893년에 작곡된 작품입니다. 드보르자크는 고향 체코의 전통과 민족적 색채를 음악에 담은 대표적인 민족주의 작곡가입니다. 이 작품은 미국에서 받은 인상과 새로운 문화에 대한 관심이 반영되어 있으며, 특히 4악장은 힘차고 웅장한 주제가 반복되어 강한 에너지를 느낄 수 있습니다.
           </p>
         </div>
       </section>
@@ -74,17 +89,16 @@ const NewWorldSymphony = () => {
         <ScoreViewer musicXmlUrl="/ssgscore.musicxml" scoredNotes={scoredNotes} />
       </section>
 
-      {/* 3. MR 재생 Section */}
-      <section className={`section player-section ${audioPlayed ? 'completed' : ''}`}>
-        <MRAudioPlayer
-          audioUrl={ssgAudio}
-          trackName="신세계 교향곡 - 메인 테마 (MR)"
-          onPlayed={() => setAudioPlayed(true)}
-          playerRef={mrPlayerRef}
-        />
-      </section>
+      {/* Hidden MR Player state container */}
+      <MRAudioPlayer
+        audioUrl={ssgAudio}
+        trackName="신세계 교향곡 - 메인 테마 (MR)"
+        onPlayed={() => setAudioPlayed(true)}
+        playerRef={mrPlayerRef}
+        hideUI={true}
+      />
 
-      {/* 3.5. 연주 분석 및 채점 Section */}
+      {/* 연주 분석 및 채점 Section */}
       <PracticeRecorder
         musicXmlUrl="/ssgscore.musicxml"
         mrPlayerRef={mrPlayerRef}
@@ -98,6 +112,7 @@ const NewWorldSymphony = () => {
         correctAnswer="안토닌 드보르자크"
         isCompleted={quizCompleted}
         onComplete={() => setQuizCompleted(true)}
+        successMessage="정답입니다! 🎉"
       />
 
       {/* 5. 다음 단계 버튼 Footer */}
