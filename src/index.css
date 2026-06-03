@@ -891,4 +891,132 @@ body {
   }
 }
 
+/* Stage Progress Bar */
+.stage-progress-bar-container {
+  position: sticky;
+  top: 0;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid #f1f2f6;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+  box-sizing: border-box;
+}
+
+.lesson-page .stage-progress-bar-container {
+  margin: -40px -40px 10px -40px;
+  padding: 15px 40px;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+}
+
+.success-page-container .stage-progress-bar-container {
+  margin: -50px -40px 20px -40px;
+  padding: 15px 40px;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  width: calc(100% + 80px); /* Span edge to edge inside success card */
+}
+
+@media (max-width: 768px) {
+  .lesson-page .stage-progress-bar-container {
+    margin: -25px -25px 10px -25px;
+    padding: 12px 25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .lesson-page .stage-progress-bar-container {
+    margin: -20px -20px 10px -20px;
+    padding: 10px 20px;
+  }
+  .success-page-container .stage-progress-bar-container {
+    margin: -50px -40px 20px -40px;
+    padding: 10px 20px;
+  }
+}
+
+.stage-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.stage-progress-brand {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--primary-color);
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.stage-progress-percent {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #95a5a6;
+}
+
+.stage-progress-track-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.progress-steps-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.progress-step-node {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #b2bec3;
+}
+
+.progress-step-node.active {
+  color: var(--primary-color);
+}
+
+.progress-step-node.completed {
+  color: var(--success-color);
+}
+
+.node-icon {
+  font-size: 0.95rem;
+}
+
+.progress-step-connector {
+  flex-grow: 1;
+  height: 3px;
+  background: #dfe6e9;
+  max-width: 40px;
+  min-width: 15px;
+  border-radius: 1.5px;
+}
+
+.progress-step-connector.active {
+  background: var(--success-color);
+}
+
+@media (max-width: 480px) {
+  .progress-step-node .node-label {
+    display: none;
+  }
+  .progress-step-connector {
+    max-width: 50px;
+  }
+}
+
+
 

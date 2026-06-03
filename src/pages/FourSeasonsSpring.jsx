@@ -5,6 +5,8 @@ import MRAudioPlayer from '../components/MRAudioPlayer';
 import QuizSection from '../components/QuizSection';
 import PracticeRecorder from '../components/PracticeRecorder';
 import springAudio from '../assets/Spring.wav';
+import StageProgressBar from '../components/StageProgressBar';
+
 
 const FourSeasonsSpring = () => {
   const navigate = useNavigate();
@@ -30,6 +32,7 @@ const FourSeasonsSpring = () => {
 
   return (
     <div className="lesson-page">
+      <StageProgressBar currentStage={3} />
       <header className="lesson-header">
         <div className="page-meta">
           <span className="stage-badge">3단계</span>

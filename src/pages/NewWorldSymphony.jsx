@@ -5,6 +5,8 @@ import MRAudioPlayer from '../components/MRAudioPlayer';
 import QuizSection from '../components/QuizSection';
 import PracticeRecorder from '../components/PracticeRecorder';
 import ssgAudio from '../assets/ssgmp3.mp3';
+import StageProgressBar from '../components/StageProgressBar';
+
 
 const NewWorldSymphony = () => {
   const navigate = useNavigate();
@@ -30,6 +32,7 @@ const NewWorldSymphony = () => {
 
   return (
     <div className="lesson-page">
+      <StageProgressBar currentStage={2} />
       <header className="lesson-header">
         <div className="page-meta">
           <span className="stage-badge">2단계</span>

@@ -4,6 +4,8 @@ import ScoreViewer from '../components/ScoreViewer';
 import MRAudioPlayer from '../components/MRAudioPlayer';
 import QuizSection from '../components/QuizSection';
 import PracticeRecorder from '../components/PracticeRecorder';
+import StageProgressBar from '../components/StageProgressBar';
+
 
 const TongTongTongTong = () => {
   const navigate = useNavigate();
@@ -25,6 +27,7 @@ const TongTongTongTong = () => {
 
   return (
     <div className="lesson-page">
+      <StageProgressBar currentStage={1} />
       <header className="lesson-header">
         <div className="page-meta">
           <span className="stage-badge">1단계</span>

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import StageProgressBar from '../components/StageProgressBar';
 
 const SuccessPage = () => {
   const navigate = useNavigate();
@@ -92,7 +93,8 @@ const SuccessPage = () => {
     <div className="success-page-outer">
       <canvas ref={canvasRef} className="confetti-canvas" />
       <div className="success-page-container">
-        <div className="success-badge-icon">🎓🏆🎻✨</div>
+        <StageProgressBar currentStage={4} />
+        <div className="success-badge-icon" style={{ marginTop: '10px' }}>🎓🏆🎻✨</div>
         <h1 className="success-title">스테이지 완료!</h1>
         <p className="success-desc">
           당신은 드디어 3곡을 모두 연주할 수 있게 되었습니다.
