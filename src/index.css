@@ -16,7 +16,7 @@
 html, body, #root {
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden !important;
+  overflow-x: clip;
   box-sizing: border-box;
 }
 
@@ -1017,6 +1017,4 @@ body {
     max-width: 50px;
   }
 }
-
-
 
