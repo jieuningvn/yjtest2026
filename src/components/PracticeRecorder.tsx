@@ -315,48 +315,6 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
 
   return (
     <>
-      {/* 1단계: 곡 들어보기 */}
-      <section className="section step1-section" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div className="section-header-row">
-          <h3>🎵 곡 들어보기</h3>
-          <span className={`status-indicator ${isMrPlaying ? 'done' : 'pending'}`}>
-            {isMrPlaying ? '● 재생 중' : '■ 정지됨'}
-          </span>
-        </div>
-        <p style={{ fontSize: '0.95rem', color: '#636e72', margin: '0 0 10px 0' }}>
-          먼저 예시 연주를 들어보세요.
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-          <button 
-            className="rec-btn rec-btn-listen" 
-            onClick={handleListenExample} 
-            disabled={isRecording}
-            style={{
-              padding: '14px 28px',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              borderRadius: '12px',
-              background: isRecording ? '#dfe6e9' : 'white',
-              color: isRecording ? '#b2bec3' : 'var(--primary-color)',
-              border: `1px solid ${isRecording ? '#b2bec3' : 'var(--primary-color)'}`,
-              cursor: isRecording ? 'not-allowed' : 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              minWidth: '160px',
-              justifyContent: 'center',
-            }}
-            title={isRecording ? "채점 중에는 사용할 수 없습니다." : "반주 듣기"}
-          >
-            <span>{isMrPlaying ? '⏸ 반주 일시정지' : '▶ 반주 듣기'}</span>
-          </button>
-          {isRecording && (
-            <span style={{ fontSize: '0.85rem', color: 'var(--error-color)', fontWeight: 500 }}>
-              ⚠️ 채점 중에는 사용할 수 없습니다.
-            </span>
-          )}
-        </div>
-      </section>
 
       {/* 2단계: 연주하고 채점하기 */}
       {scoredResult ? (
@@ -586,14 +544,42 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
             width: '100%',
             marginTop: '5px'
           }}>
-            {/* Left: [채점 시작] / [채점 중지] 버튼 */}
-            <div style={{ flex: '1 1 200px', maxWidth: '300px' }}>
+            {/* Left: 반주 듣기 버튼 */}
+            <div style={{ flex: '1 1 120px', maxWidth: '200px' }}>
+              <button 
+                className="rec-btn rec-btn-listen" 
+                onClick={handleListenExample} 
+                disabled={isRecording}
+                style={{
+                  width: '100%',
+                  height: '50px',
+                  justifyContent: 'center',
+                  margin: 0,
+                  fontSize: '0.95rem',
+                  fontWeight: 'bold',
+                  borderRadius: '12px',
+                  background: isRecording ? '#dfe6e9' : 'white',
+                  color: isRecording ? '#b2bec3' : 'var(--primary-color)',
+                  border: `1px solid ${isRecording ? '#b2bec3' : 'var(--primary-color)'}`,
+                  cursor: isRecording ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+                title={isRecording ? "채점 중에는 사용할 수 없습니다." : "반주 듣기"}
+              >
+                <span>{isMrPlaying ? '⏸ 반주 정지' : '▶ 반주 듣기'}</span>
+              </button>
+            </div>
+
+            {/* Middle: [채점 시작] / [채점 중지] 버튼 */}
+            <div style={{ flex: '1 1 120px', maxWidth: '200px' }}>
               {!isRecording ? (
-                <button className="rec-btn rec-btn-start" onClick={startRecording} style={{ width: '100%', height: '50px', justifyContent: 'center', margin: 0 }}>
+                <button className="rec-btn rec-btn-start" onClick={startRecording} style={{ width: '100%', height: '50px', justifyContent: 'center', margin: 0, fontSize: '0.95rem' }}>
                   <span>🎙️ 채점 시작</span>
                 </button>
               ) : (
-                <button className="rec-btn rec-btn-stop" onClick={stopRecording} style={{ width: '100%', height: '50px', justifyContent: 'center', margin: 0 }}>
+                <button className="rec-btn rec-btn-stop" onClick={stopRecording} style={{ width: '100%', height: '50px', justifyContent: 'center', margin: 0, fontSize: '0.95rem' }}>
                   <span>⏹️ 채점 중지</span>
                 </button>
               )}
@@ -607,12 +593,12 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
               justifyContent: 'center',
               background: '#1e272e',
               borderRadius: '12px',
-              padding: '10px 20px',
+              padding: '10px 15px',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
               border: '1px solid rgba(255, 255, 255, 0.05)',
               boxSizing: 'border-box',
               minHeight: '50px',
-              minWidth: '140px'
+              minWidth: '130px'
             }}>
               <VisualMetronome
                 bpm={bpm}
@@ -624,7 +610,7 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
           </div>
 
           <div style={{ fontSize: '0.8rem', color: '#636e72', fontWeight: 500, marginTop: '-5px', marginBottom: '5px' }}>
-            ℹ️ 반주가 자동으로 중지되고 채점이 시작됩니다.
+            ℹ️ 채점 시작 시 반주는 자동으로 정지됩니다.
           </div>
 
           {/* 2. BPM 설정 영역 */}
