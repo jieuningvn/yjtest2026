@@ -1,4 +1,5 @@
 import { stepToMidiOffset, midiToFrequency } from './noteUtils';
+import JSZip from 'jszip';
 
 export interface TimelineNote {
   measureNumber: number;
@@ -25,8 +26,30 @@ export async function fetchAndParseMusicXml(url: string): Promise<ParsedMusicXml
   if (!response.ok) {
     throw new Error(`Failed to fetch MusicXML from ${url}: ${response.statusText}`);
   }
-  const xmlText = await response.text();
-  return parseMusicXml(xmlText);
+  
+  if (url.toLowerCase().endsWith('.mxl')) {
+    const arrayBuffer = await response.arrayBuffer();
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    
+    // Find the first .xml file in the archive that is not container.xml
+    let xmlFileName = '';
+    for (const name of Object.keys(zip.files)) {
+      if (name.toLowerCase().endsWith('.xml') && !name.includes('container.xml') && !name.includes('META-INF')) {
+        xmlFileName = name;
+        break;
+      }
+    }
+    
+    if (!xmlFileName) {
+      throw new Error(`No XML score file found in MXL archive: ${url}`);
+    }
+    
+    const xmlText = await zip.files[xmlFileName].async('string');
+    return parseMusicXml(xmlText);
+  } else {
+    const xmlText = await response.text();
+    return parseMusicXml(xmlText);
+  }
 }
 
 /**

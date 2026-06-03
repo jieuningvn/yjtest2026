@@ -85,7 +85,7 @@ const TongTongTongTong = () => {
           <h3>악보 보기</h3>
           <span className="status-indicator done">MusicXML</span>
         </div>
-        <ScoreViewer musicXmlUrl="/tongtong.musicxml" scoredNotes={scoredNotes} />
+        <ScoreViewer musicXmlUrl="/tongtong.xml" scoredNotes={scoredNotes} />
       </section>
 
       {/* Hidden MR Player state container */}
@@ -99,7 +99,7 @@ const TongTongTongTong = () => {
 
       {/* 연주 분석 및 채점 Section */}
       <PracticeRecorder
-        musicXmlUrl="/tongtong.musicxml"
+        musicXmlUrl="/tongtong.xml"
         mrPlayerRef={mrPlayerRef}
         onScored={setScoredNotes}
       />
