@@ -644,100 +644,128 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
             </div>
           )}
 
-          {/* 5. 실시간 수집 통계 패널 */}
-          {isRecording && !isCountingIn && (
-            <div style={{
-              background: 'rgba(46, 204, 113, 0.06)',
-              border: '1.5px solid var(--success-color)',
-              borderRadius: '16px',
-              padding: '12px',
-              display: 'flex',
-              justifyContent: 'space-around',
-              alignItems: 'center',
-              boxShadow: '0 4px 12px rgba(46, 204, 113, 0.03)',
+          {/* 7. Real-time Pitch Detection Display (사용자용 심플 뷰) */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.75)',
+            border: '1px solid rgba(99, 102, 241, 0.15)',
+            borderRadius: '12px',
+            padding: '12px 20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: '0.9rem',
+            marginTop: '10px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ color: '#636e72', fontWeight: 500 }}>현재 감지 음정:</span>
+              <strong style={{ 
+                fontSize: '1.1rem', 
+                color: currentPitch === '---' ? '#b2bec3' : '#00cec9' 
+              }}>{currentPitch}</strong>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ color: '#636e72', fontWeight: 500 }}>음정 편차:</span>
+              <strong style={{ 
+                fontSize: '1.1rem', 
+                color: currentFreq === 0 ? '#b2bec3' : 
+                       Math.abs(centsError) <= 30 ? 'var(--success-color)' : 
+                       Math.abs(centsError) <= 50 ? '#0984e3' : 'var(--error-color)'
+              }}>
+                {currentFreq > 0 ? (centsError >= 0 ? `+${centsError}c` : `${centsError}c`) : '0c'}
+              </strong>
+            </div>
+          </div>
+
+          {/* 개발자용 디버그/분석 정보 접기/펼치기 */}
+          <details style={{
+            marginTop: '10px',
+            border: '1px solid #dfe6e9',
+            borderRadius: '12px',
+            background: '#f8f9fa',
+            padding: '10px 14px'
+          }}>
+            <summary style={{
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              color: '#636e72',
+              cursor: 'pointer',
+              userSelect: 'none'
             }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '0.68rem', color: '#636e72', textTransform: 'uppercase', letterSpacing: '0.5px' }}>박자표</div>
-                <strong style={{ fontSize: '1.1rem', color: 'var(--primary-color)' }}>{beats}/{beatType}</strong>
+              🛠️ 개발자용 디버그/분석 정보
+            </summary>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>
+              {/* 실시간 주파수 & 음정 편차 게이지 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#2d3436' }}>
+                  <span>실시간 주파수: <strong>{currentFreq > 0 ? `${currentFreq} Hz` : '---'}</strong></span>
+                  <span>음정 편차: <strong>{currentFreq > 0 ? (centsError >= 0 ? `+${centsError}c` : `${centsError}c`) : '---'}</strong></span>
+                </div>
+                {/* Pitch Cents Deviation Gauge */}
+                <div className="pitch-gauge-container" style={{ margin: '5px 0' }}>
+                  <div 
+                    className="pitch-gauge-marker"
+                    style={{ 
+                      left: `${currentFreq > 0 ? getGaugeLeftPercentage(centsError) : 50}%`,
+                      background: currentFreq === 0 ? '#b2bec3' : 
+                                  Math.abs(centsError) <= 30 ? 'var(--success-color)' : 
+                                  Math.abs(centsError) <= 80 ? '#ffeaa7' : 'var(--error-color)'
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '0.65rem', color: '#b2bec3' }}>
+                  <span>낮음 (-50c)</span>
+                  <span>정음 (0)</span>
+                  <span>높음 (+50c)</span>
+                </div>
               </div>
-              <div style={{ width: '1px', height: '24px', background: 'rgba(0,0,0,0.06)' }} />
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '0.68rem', color: '#636e72', textTransform: 'uppercase', letterSpacing: '0.5px' }}>녹음 시간</div>
-                <strong style={{ fontSize: '1.1rem', color: 'var(--success-color)' }}>{recordedSeconds.toFixed(1)}초</strong>
-              </div>
-              <div style={{ width: '1px', height: '24px', background: 'rgba(0,0,0,0.06)' }} />
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '0.68rem', color: '#636e72', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수집된 음정 샘플</div>
-                <strong style={{ fontSize: '1.1rem', color: '#2980b9' }}>{sampleCount}개</strong>
-              </div>
-            </div>
-          )}
 
-          {/* 6. Answer Timeline Preview */}
-          <div className="timeline-preview">
-            <h4>정답 악보 타임라인 (첫 4마디 MVP)</h4>
-            {answerTimeline.length === 0 ? (
-              <p style={{ fontSize: '0.85rem', color: '#7f8c8d' }}>악보 분석 중...</p>
-            ) : (
-              <div className="timeline-notes-list">
-                {answerTimeline.map((note, idx) => (
-                  <div key={idx} className="timeline-note-badge">
-                    <div style={{ fontWeight: 600, color: 'var(--primary-color)' }}>{note.noteName}{note.octave}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#7f8c8d' }}>
-                      {note.measureNumber}마디 ({note.duration}박)
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 7. Real-time Pitch Detection Display */}
-          <div className="pitch-display-card">
-            <div className="pitch-display-grid">
-              <div className="pitch-metric">
-                <span className="pitch-label">감지된 음정</span>
-                <span className="pitch-value" style={{ color: currentPitch === '---' ? '#b2bec3' : '#00cec9' }}>
-                  {currentPitch}
-                </span>
-              </div>
-              <div className="pitch-metric">
-                <span className="pitch-label">실시간 주파수</span>
-                <span className="pitch-value">
-                  {currentFreq > 0 ? `${currentFreq} Hz` : '---'}
-                </span>
-              </div>
-              <div className="pitch-metric">
-                <span className="pitch-label">음정 편차 (Cents)</span>
-                <span className="pitch-value cents" style={{ 
-                  color: currentFreq === 0 ? '#b2bec3' : 
-                         Math.abs(centsError) <= 30 ? 'var(--success-color)' : 
-                         Math.abs(centsError) <= 50 ? '#81ecec' : 
-                         Math.abs(centsError) <= 80 ? '#ffeaa7' : 'var(--error-color)'
+              {/* 5. 실시간 수집 통계 패널 */}
+              {isRecording && !isCountingIn && (
+                <div style={{
+                  background: 'rgba(46, 204, 113, 0.06)',
+                  border: '1px solid var(--success-color)',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  display: 'flex',
+                  justifyContent: 'space-around',
+                  alignItems: 'center',
                 }}>
-                  {currentFreq > 0 ? (centsError >= 0 ? `+${centsError}` : centsError) : '0'}
-                </span>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.6rem', color: '#636e72' }}>박자표</div>
+                    <strong style={{ fontSize: '0.85rem', color: 'var(--primary-color)' }}>{beats}/{beatType}</strong>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.6rem', color: '#636e72' }}>녹음 시간</div>
+                    <strong style={{ fontSize: '0.85rem', color: 'var(--success-color)' }}>{recordedSeconds.toFixed(1)}초</strong>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.6rem', color: '#636e72' }}>수집 샘플</div>
+                    <strong style={{ fontSize: '0.85rem', color: '#2980b9' }}>{sampleCount}개</strong>
+                  </div>
+                </div>
+              )}
+
+              {/* 6. Answer Timeline Preview */}
+              <div className="timeline-preview" style={{ padding: '10px', background: 'white', border: '1px solid #dfe6e9' }}>
+                <h5 style={{ margin: '0 0 6px 0', fontSize: '0.8rem', color: '#2d3436' }}>정답 악보 타임라인 (첫 4마디 MVP)</h5>
+                {answerTimeline.length === 0 ? (
+                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', margin: 0 }}>악보 분석 중...</p>
+                ) : (
+                  <div className="timeline-notes-list" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    {answerTimeline.map((note, idx) => (
+                      <div key={idx} className="timeline-note-badge" style={{ padding: '4px 8px', fontSize: '0.75rem', flexShrink: 0 }}>
+                        <div style={{ fontWeight: 600, color: 'var(--primary-color)' }}>{note.noteName}{note.octave}</div>
+                        <div style={{ fontSize: '0.65rem', color: '#7f8c8d' }}>
+                          {note.measureNumber}마디 ({note.duration}박)
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Pitch Cents Deviation Gauge */}
-            <div className="pitch-gauge-container">
-              <div 
-                className="pitch-gauge-marker"
-                style={{ 
-                  left: `${currentFreq > 0 ? getGaugeLeftPercentage(centsError) : 50}%`,
-                  background: currentFreq === 0 ? '#b2bec3' : 
-                              Math.abs(centsError) <= 30 ? 'var(--success-color)' : 
-                              Math.abs(centsError) <= 80 ? '#ffeaa7' : 'var(--error-color)'
-                }}
-              />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '0.65rem', color: '#b2bec3', marginTop: '6px' }}>
-              <span>낮음 (-50c)</span>
-              <span>정음 (0)</span>
-              <span>높음 (+50c)</span>
-            </div>
-          </div>
+          </details>
         </section>
       )}
     </>
