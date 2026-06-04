@@ -692,7 +692,7 @@ export const PracticeRecorder: React.FC<PracticeRecorderProps> = ({ musicXmlUrl,
               cursor: 'pointer',
               userSelect: 'none'
             }}>
-              🛠️ 개발자용 디버그/분석 정보
+              정밀 분석 정보
             </summary>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>
               {/* 실시간 주파수 & 음정 편차 게이지 */}
